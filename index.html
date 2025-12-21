@@ -1,0 +1,128 @@
+﻿<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>🐍 Snake</title>
+  <style>
+    body {
+      background: #111;
+      color: white;
+      font-family: Arial, sans-serif;
+      text-align: center;
+    }
+    #tablero {
+      position: relative;
+      width: 400px;
+      height: 400px;
+      background: #000;
+      margin: 20px auto;
+      border: 2px solid white;
+    }
+    .comida {
+      background: red;
+      position: absolute;
+      width: 20px;
+      height: 20px;
+    }
+    .serpiente {
+      background: lime;
+      position: absolute;
+      width: 20px;
+      height: 20px;
+    }
+  </style>
+</head>
+<body>
+
+<h1>🐍 Snake</h1>
+<div id="tablero"></div>
+<p>Puntaje: <span id="puntos">0</span></p>
+
+<script>
+  const tablero = document.getElementById("tablero");
+  const puntosTexto = document.getElementById("puntos");
+
+  const tamaño = 20;
+  let puntos = 0;
+
+  let snake = [{ x: 200, y: 200 }];
+  let direccion = "derecha";
+
+  let comida = {
+    x: Math.floor(Math.random() * 20) * tamaño,
+    y: Math.floor(Math.random() * 20) * tamaño
+  };
+
+  document.addEventListener("keydown", e => {
+    if (e.key === "ArrowUp" && direccion !== "abajo") direccion = "arriba";
+    if (e.key === "ArrowDown" && direccion !== "arriba") direccion = "abajo";
+    if (e.key === "ArrowLeft" && direccion !== "derecha") direccion = "izquierda";
+    if (e.key === "ArrowRight" && direccion !== "izquierda") direccion = "derecha";
+  });
+
+  function dibujar() {
+    tablero.innerHTML = "";
+
+    snake.forEach(parte => {
+      const s = document.createElement("div");
+      s.className = "serpiente";
+      s.style.left = parte.x + "px";
+      s.style.top = parte.y + "px";
+      tablero.appendChild(s);
+    });
+
+    const f = document.createElement("div");
+    f.className = "comida";
+    f.style.left = comida.x + "px";
+    f.style.top = comida.y + "px";
+    tablero.appendChild(f);
+  }
+
+  function mover() {
+    let cabeza = { ...snake[0] };
+
+    if (direccion === "arriba") cabeza.y -= tamaño;
+    if (direccion === "abajo") cabeza.y += tamaño;
+    if (direccion === "izquierda") cabeza.x -= tamaño;
+    if (direccion === "derecha") cabeza.x += tamaño;
+
+    // Verificar colisión con bordes
+    if (
+      cabeza.x < 0 || cabeza.x >= 400 ||
+      cabeza.y < 0 || cabeza.y >= 400
+    ) {
+      alert("Perdiste 😢");
+      location.reload();
+    }
+
+    snake.unshift(cabeza);
+
+    // Comer comida
+    if (cabeza.x === comida.x && cabeza.y === comida.y) {
+      puntos++;
+      puntosTexto.textContent = puntos;
+      comida = {
+        x: Math.floor(Math.random() * 20) * tamaño,
+        y: Math.floor(Math.random() * 20) * tamaño
+      };
+    } else {
+      snake.pop();
+    }
+
+    // Verificar colisión consigo mismo
+    for (let i = 1; i < snake.length; i++) {
+      if (cabeza.x === snake[i].x && cabeza.y === snake[i].y) {
+        alert("Perdiste 😢");
+        location.reload();
+      }
+    }
+  }
+
+  setInterval(() => {
+    mover();
+    dibujar();
+  }, 150);
+</script>
+
+</body>
+</html>
