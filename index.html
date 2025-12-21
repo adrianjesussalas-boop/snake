@@ -82,11 +82,14 @@
   let direccion = "derecha";
   let jugando = true;
 
+  // Función para generar comida dentro del tablero y que no choque con la serpiente
   function nuevaComida() {
     let x, y, choca;
+    const maxX = Math.floor((tablero.clientWidth - tamaño) / tamaño);
+    const maxY = Math.floor((tablero.clientHeight - tamaño) / tamaño);
     do {
-      x = Math.floor(Math.random() * Math.floor(tablero.clientWidth / tamaño)) * tamaño;
-      y = Math.floor(Math.random() * Math.floor(tablero.clientHeight / tamaño)) * tamaño;
+      x = Math.floor(Math.random() * (maxX + 1)) * tamaño;
+      y = Math.floor(Math.random() * (maxY + 1)) * tamaño;
       choca = snake.some(parte => parte.x === x && parte.y === y);
     } while (choca);
     return { x, y };
@@ -119,9 +122,9 @@
 
   function perder() {
     if (jugando) {
-      jugando = false;
-      alert("Perdiste 😢");
-      reiniciarJuego();
+      jugando = false;          // Bloquea que se llame otra vez
+      alert("Perdiste 😢");    // Aparece una sola vez
+      reiniciarJuego();         // Reinicia juego correctamente
     }
   }
 
@@ -131,11 +134,14 @@
     puntos = 0;
     puntosTexto.textContent = puntos;
     comida = nuevaComida();
-    jugando = true;
+    jugando = true;             // desbloquea juego para continuar
   }
 
   function mover() {
+    if (!jugando) return;       // si perdimos, no mover hasta reinicio
+
     let cabeza = { ...snake[0] };
+
     if (direccion === "arriba") cabeza.y -= tamaño;
     if (direccion === "abajo") cabeza.y += tamaño;
     if (direccion === "izquierda") cabeza.x -= tamaño;
@@ -146,10 +152,12 @@
       cabeza.y < 0 || cabeza.y >= tablero.clientHeight
     ) {
       perder();
+      return;
     }
 
     if (snake.some(parte => parte.x === cabeza.x && parte.y === cabeza.y)) {
       perder();
+      return;
     }
 
     snake.unshift(cabeza);
@@ -171,3 +179,4 @@
 
 </body>
 </html>
+
