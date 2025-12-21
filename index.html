@@ -13,6 +13,12 @@
       margin: 0;
       padding: 0;
     }
+    #puntaje-container {
+      width: 100%;
+      text-align: center;
+      margin-top: 10px;
+      font-size: 20px;
+    }
     #tablero {
       position: relative;
       width: 90vw;
@@ -20,7 +26,7 @@
       height: 90vw;
       max-height: 400px;
       background: #000;
-      margin: 20px auto;
+      margin: 10px auto;
       border: 2px solid white;
     }
     .comida {
@@ -40,7 +46,7 @@
       grid-template-columns: 60px 60px 60px;
       justify-content: center;
       gap: 5px;
-      margin-top: 10px;
+      margin: 10px auto 20px;
     }
     .botones button {
       font-size: 24px;
@@ -54,14 +60,17 @@
       .botones {
         display: none;
       }
+      #puntaje-container {
+        font-size: 24px;
+      }
     }
   </style>
 </head>
 <body>
 
 <h1>🐍 Snake</h1>
+<div id="puntaje-container">Puntaje: <span id="puntos">0</span></div>
 <div id="tablero"></div>
-<p>Puntaje: <span id="puntos">0</span></p>
 
 <div class="botones">
   <div></div>
@@ -162,7 +171,6 @@
     }
   }
 
-  // Velocidad intermedia
   setInterval(() => {
     mover();
     dibujar();
@@ -171,4 +179,3 @@
 
 </body>
 </html>
-
