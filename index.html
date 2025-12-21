@@ -3,17 +3,23 @@
 <head>
   <meta charset="UTF-8">
   <title>🐍 Snake</title>
+  <!-- Esto hace que el juego se adapte a la pantalla del celular -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <style>
     body {
       background: #111;
       color: white;
       font-family: Arial, sans-serif;
       text-align: center;
+      margin: 0;
+      padding: 0;
     }
     #tablero {
       position: relative;
-      width: 400px;
-      height: 400px;
+      width: 90vw; /* se adapta al ancho de la pantalla */
+      max-width: 400px;
+      height: 90vw;
+      max-height: 400px;
       background: #000;
       margin: 20px auto;
       border: 2px solid white;
@@ -30,6 +36,22 @@
       width: 20px;
       height: 20px;
     }
+    /* Botones para celular */
+    .botones {
+      display: grid;
+      grid-template-columns: repeat(3, 60px);
+      justify-content: center;
+      gap: 5px;
+      margin-top: 10px;
+    }
+    .botones button {
+      font-size: 20px;
+      padding: 10px;
+      background: #222;
+      color: white;
+      border: 2px solid white;
+      border-radius: 5px;
+    }
   </style>
 </head>
 <body>
@@ -37,6 +59,14 @@
 <h1>🐍 Snake</h1>
 <div id="tablero"></div>
 <p>Puntaje: <span id="puntos">0</span></p>
+
+<!-- Botones para móvil -->
+<div class="botones">
+  <button onclick="direccion='arriba'">↑</button>
+  <button onclick="direccion='izquierda'">←</button>
+  <button onclick="direccion='abajo'">↓</button>
+  <button onclick="direccion='derecha'">→</button>
+</div>
 
 <script>
   const tablero = document.getElementById("tablero");
@@ -49,8 +79,8 @@
   let direccion = "derecha";
 
   let comida = {
-    x: Math.floor(Math.random() * 20) * tamaño,
-    y: Math.floor(Math.random() * 20) * tamaño
+    x: Math.floor(Math.random() * Math.floor(tablero.clientWidth / tamaño)) * tamaño,
+    y: Math.floor(Math.random() * Math.floor(tablero.clientHeight / tamaño)) * tamaño
   };
 
   document.addEventListener("keydown", e => {
@@ -88,8 +118,8 @@
 
     // Verificar colisión con bordes
     if (
-      cabeza.x < 0 || cabeza.x >= 400 ||
-      cabeza.y < 0 || cabeza.y >= 400
+      cabeza.x < 0 || cabeza.x >= tablero.clientWidth ||
+      cabeza.y < 0 || cabeza.y >= tablero.clientHeight
     ) {
       alert("Perdiste 😢");
       location.reload();
@@ -102,14 +132,14 @@
       puntos++;
       puntosTexto.textContent = puntos;
       comida = {
-        x: Math.floor(Math.random() * 20) * tamaño,
-        y: Math.floor(Math.random() * 20) * tamaño
+        x: Math.floor(Math.random() * Math.floor(tablero.clientWidth / tamaño)) * tamaño,
+        y: Math.floor(Math.random() * Math.floor(tablero.clientHeight / tamaño)) * tamaño
       };
     } else {
       snake.pop();
     }
 
-    // Verificar colisión consigo mismo
+    // Colisión consigo mismo
     for (let i = 1; i < snake.length; i++) {
       if (cabeza.x === snake[i].x && cabeza.y === snake[i].y) {
         alert("Perdiste 😢");
