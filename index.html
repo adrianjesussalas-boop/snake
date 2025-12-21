@@ -82,14 +82,14 @@
   let direccion = "derecha";
   let jugando = true;
 
-  // Función para generar comida dentro del tablero y que no choque con la serpiente
+  // Generar comida dentro del tablero y que no choque con la serpiente
   function nuevaComida() {
+    const cols = Math.floor(tablero.clientWidth / tamaño);
+    const rows = Math.floor(tablero.clientHeight / tamaño);
     let x, y, choca;
-    const maxX = Math.floor((tablero.clientWidth - tamaño) / tamaño);
-    const maxY = Math.floor((tablero.clientHeight - tamaño) / tamaño);
     do {
-      x = Math.floor(Math.random() * (maxX + 1)) * tamaño;
-      y = Math.floor(Math.random() * (maxY + 1)) * tamaño;
+      x = Math.floor(Math.random() * cols) * tamaño;
+      y = Math.floor(Math.random() * rows) * tamaño;
       choca = snake.some(parte => parte.x === x && parte.y === y);
     } while (choca);
     return { x, y };
@@ -122,23 +122,14 @@
 
   function perder() {
     if (jugando) {
-      jugando = false;          // Bloquea que se llame otra vez
-      alert("Perdiste 😢");    // Aparece una sola vez
-      reiniciarJuego();         // Reinicia juego correctamente
+      jugando = false;
+      alert("Perdiste 😢");
+      location.reload(); // reinicia toda la página
     }
   }
 
-  function reiniciarJuego() {
-    snake = [{ x: 200, y: 200 }];
-    direccion = "derecha";
-    puntos = 0;
-    puntosTexto.textContent = puntos;
-    comida = nuevaComida();
-    jugando = true;             // desbloquea juego para continuar
-  }
-
   function mover() {
-    if (!jugando) return;       // si perdimos, no mover hasta reinicio
+    if (!jugando) return;
 
     let cabeza = { ...snake[0] };
 
@@ -171,6 +162,7 @@
     }
   }
 
+  // Velocidad intermedia
   setInterval(() => {
     mover();
     dibujar();
