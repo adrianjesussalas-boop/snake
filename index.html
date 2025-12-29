@@ -6,252 +6,269 @@
 <title>Snake Game</title>
 
 <style>
-*{
+body{
   margin:0;
-  padding:0;
-  box-sizing:border-box;
   font-family:Arial;
-}
-
-html,body{
-  width:100%;
-  height:100%;
   background:#111;
-  overflow:hidden;
+  color:#fff;
+  text-align:center;
+  touch-action:none;
 }
-
-/* ===== MENÚ ===== */
-#menu{
-  position:fixed;
-  inset:0;
-  background:#111;
-  display:flex;
-  flex-direction:column;
-  justify-content:center;
-  align-items:center;
-  gap:15px;
-  z-index:10;
-}
-
-#menu h1{
-  color:lime;
-  font-size:40px;
-}
-
-.menu-btn{
-  padding:12px 30px;
-  font-size:18px;
+button{
+  padding:10px 16px;
+  margin:6px;
+  font-size:14px;
   border:none;
   border-radius:8px;
   cursor:pointer;
 }
-
-.play{background:lime;}
-.mode{background:#09f;color:white;}
-.back{background:#f33;color:white;}
-
-/* ===== HUD ===== */
-#hud{
-  width:100%;
-  padding:10px;
-  color:white;
-  display:flex;
-  justify-content:space-between;
-  background:#000;
-}
-
-/* ===== CANVAS ===== */
 canvas{
-  background:black;
+  background:#000;
   display:block;
-  margin:auto;
-  touch-action:none;
+  margin:0 auto;
+}
+.shop{
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:10px;
+}
+.item{
+  background:#222;
+  padding:10px;
+  border-radius:10px;
+}
+.equipped{
+  outline:3px solid lime;
 }
 </style>
 </head>
 
 <body>
 
-<!-- MENÚ -->
 <div id="menu">
   <h1>🐍 Snake</h1>
-  <button class="menu-btn play" onclick="startFromMenu()">Jugar</button>
-  <button class="menu-btn mode" onclick="setMode('facil')">Fácil</button>
-  <button class="menu-btn mode" onclick="setMode('normal')">Normal</button>
-  <button class="menu-btn mode" onclick="setMode('dificil')">Difícil</button>
+  <p>Monedas: <span id="coins">0</span></p>
+  <button onclick="showModes()">🎮 Jugar</button>
+  <button onclick="openShop('snake')">🐍 Skins</button>
+  <button onclick="openShop('board')">🟩 Tableros</button>
 </div>
 
-<!-- HUD -->
-<div id="hud" style="display:none">
-  <span id="score">Puntos: 0</span>
-  <span id="mode">Modo: Normal</span>
+<div id="modes" style="display:none;">
+  <h2>Modo</h2>
+  <button onclick="setMode('facil')">Fácil</button>
+  <button onclick="setMode('normal')">Normal</button>
+  <button onclick="setMode('dificil')">Difícil</button>
+  <button onclick="setMode('extremo')">Extremo</button><br>
+  <button onclick="backMenu()">⬅ Volver</button>
 </div>
 
-<canvas id="game"></canvas>
+<div id="shop" style="display:none;">
+  <h2 id="shopTitle"></h2>
+  <div class="shop" id="shopItems"></div>
+  <button onclick="backMenu()">⬅ Volver</button>
+</div>
+
+<div id="game" style="display:none;">
+  <p id="score"></p>
+  <canvas id="canvas" width="320" height="320"></canvas>
+</div>
 
 <script>
-// =======================
-// CANVAS RESPONSIVO
-// =======================
-const canvas = document.getElementById("game");
-const ctx = canvas.getContext("2d");
+const canvas=document.getElementById("canvas");
+const ctx=canvas.getContext("2d");
+const box=20;
 
-function resize(){
-  const size = Math.min(window.innerWidth, window.innerHeight - 50);
-  canvas.width = size;
-  canvas.height = size;
+let snake,food,dir,score,speed,coinsPerApple;
+let interval;
+
+let coins=+localStorage.getItem("coins")||0;
+
+let ownedSkins=JSON.parse(localStorage.getItem("ownedSkins"))||[0];
+let ownedBoards=JSON.parse(localStorage.getItem("ownedBoards"))||[0];
+
+let skinEquipped=+localStorage.getItem("skinEquipped")||0;
+let boardEquipped=+localStorage.getItem("boardEquipped")||0;
+
+const skins=[
+"#00ff00","#ff0000","#00ffff","#ffff00","#ff00ff","#ffffff",
+"#ffa500","#00ff7f","#1e90ff","#8a2be2","#ff1493","#7fff00"
+];
+
+const boards=[
+"#000","#111","#222","#003300","#330000","#001133",
+"#222200","#002222","#330033","#111133","#133311","#331111"
+];
+
+function updateCoins(){
+  document.getElementById("coins").textContent=coins;
 }
-window.addEventListener("resize", resize);
-resize();
+updateCoins();
 
-// =======================
-// BLOQUEAR SCROLL
-// =======================
-canvas.addEventListener("touchmove", e=>{
-  e.preventDefault();
-},{passive:false});
+function showModes(){
+  hideAll();
+  modes.style.display="block";
+}
 
-// =======================
-// VARIABLES
-// =======================
-const box = 20;
-let snake, food, dir, score, game;
-let speed = 170;
-let currentMode = "Normal";
+function openShop(type){
+  hideAll();
+  shop.style.display="block";
+  shopItems.innerHTML="";
+  shopTitle.textContent=type==="snake"?"🐍 Skins":"🟩 Tableros";
 
-// =======================
-// MODOS
-// =======================
+  let list=type==="snake"?skins:boards;
+  let owned=type==="snake"?ownedSkins:ownedBoards;
+  let equipped=type==="snake"?skinEquipped:boardEquipped;
+
+  list.forEach((c,i)=>{
+    let div=document.createElement("div");
+    div.className="item"+(equipped===i?" equipped":"");
+    div.innerHTML=`<div style="height:30px;background:${c}"></div>
+    <p>Precio: ${(i+1)*5}</p>`;
+
+    let btn=document.createElement("button");
+
+    if(owned.includes(i)){
+      btn.textContent=equipped===i?"Desequipar":"Equipar";
+      btn.onclick=()=>{
+        if(type==="snake"){
+          skinEquipped=equipped===i?0:i;
+          localStorage.setItem("skinEquipped",skinEquipped);
+        }else{
+          boardEquipped=equipped===i?0:i;
+          localStorage.setItem("boardEquipped",boardEquipped);
+        }
+        openShop(type);
+      };
+    }else{
+      btn.textContent="Comprar";
+      btn.onclick=()=>{
+        let price=(i+1)*5;
+        if(coins>=price){
+          coins-=price;
+          owned.push(i);
+          localStorage.setItem("coins",coins);
+          localStorage.setItem(
+            type==="snake"?"ownedSkins":"ownedBoards",
+            JSON.stringify(owned)
+          );
+          updateCoins();
+          openShop(type);
+        }else alert("No tienes monedas");
+      };
+    }
+
+    div.appendChild(btn);
+    shopItems.appendChild(div);
+  });
+}
+
+function backMenu(){
+  hideAll();
+  menu.style.display="block";
+  updateCoins();
+}
+
+function hideAll(){
+  menu.style.display="none";
+  modes.style.display="none";
+  shop.style.display="none";
+  game.style.display="none";
+}
+
 function setMode(m){
-  if(m==="facil"){ speed = 220; currentMode="Fácil"; }
-  if(m==="normal"){ speed = 170; currentMode="Normal"; }
-  if(m==="dificil"){ speed = 120; currentMode="Difícil"; }
-  document.getElementById("mode").textContent = "Modo: " + currentMode;
-}
-
-// =======================
-// INICIAR DESDE MENÚ
-// =======================
-function startFromMenu(){
-  document.getElementById("menu").style.display="none";
-  document.getElementById("hud").style.display="flex";
+  if(m==="facil"){speed=200;coinsPerApple=1;}
+  if(m==="normal"){speed=170;coinsPerApple=2;}
+  if(m==="dificil"){speed=120;coinsPerApple=3;}
+  if(m==="extremo"){speed=80;coinsPerApple=4;}
   startGame();
 }
 
-// =======================
-// INICIAR JUEGO
-// =======================
 function startGame(){
-  snake = [{x:9*box,y:9*box}];
-  dir = "RIGHT";
-  score = 0;
-  food = spawnFood();
-  document.getElementById("score").textContent="Puntos: 0";
-  clearInterval(game);
-  game = setInterval(draw, speed);
+  hideAll();
+  game.style.display="block";
+  snake=[{x:5*box,y:5*box}];
+  food=spawnFood();
+  dir="RIGHT";
+  score=0;
+  scoreEl.textContent="Puntos: 0 | Monedas: "+coins;
+  clearInterval(interval);
+  interval=setInterval(draw,speed);
 }
 
-// =======================
-// COMIDA
-// =======================
 function spawnFood(){
-  return {
-    x: Math.floor(Math.random()*18+1)*box,
-    y: Math.floor(Math.random()*18+1)*box
+  return{
+    x:Math.floor(Math.random()*15)*box,
+    y:Math.floor(Math.random()*15)*box
   };
 }
 
-// =======================
-// TECLADO (PC)
-// =======================
-document.addEventListener("keydown", e=>{
-  if(e.key==="ArrowLeft" && dir!=="RIGHT") dir="LEFT";
-  if(e.key==="ArrowUp" && dir!=="DOWN") dir="UP";
-  if(e.key==="ArrowRight" && dir!=="LEFT") dir="RIGHT";
-  if(e.key==="ArrowDown" && dir!=="UP") dir="DOWN";
-});
-
-// =======================
-// SWIPE (CELULAR) ✔
-// =======================
-let startX=0,startY=0;
-canvas.addEventListener("touchstart",e=>{
-  startX=e.touches[0].clientX;
-  startY=e.touches[0].clientY;
-});
-
-canvas.addEventListener("touchend",e=>{
-  const dx=e.changedTouches[0].clientX-startX;
-  const dy=e.changedTouches[0].clientY-startY;
-
-  if(Math.abs(dx)>Math.abs(dy)){
-    if(dx>0 && dir!=="LEFT") dir="RIGHT";
-    else if(dx<0 && dir!=="RIGHT") dir="LEFT";
-  }else{
-    if(dy>0 && dir!=="UP") dir="DOWN";
-    else if(dy<0 && dir!=="DOWN") dir="UP";
-  }
-});
-
-// =======================
-// COLISIÓN
-// =======================
-function collision(head,array){
-  return array.some(p=>p.x===head.x&&p.y===head.y);
-}
-
-// =======================
-// DIBUJO
-// =======================
 function draw(){
-  ctx.fillStyle="black";
+  ctx.fillStyle=boards[boardEquipped];
   ctx.fillRect(0,0,canvas.width,canvas.height);
 
-  // comida
+  snake.forEach((s,i)=>{
+    ctx.fillStyle=i===0?skins[skinEquipped]:"#0a0";
+    ctx.fillRect(s.x,s.y,box,box);
+  });
+
   ctx.fillStyle="red";
   ctx.fillRect(food.x,food.y,box,box);
 
-  // serpiente
-  snake.forEach((p,i)=>{
-    ctx.fillStyle=i===0?"lime":"green";
-    ctx.fillRect(p.x,p.y,box,box);
-  });
+  let head={...snake[0]};
+  if(dir==="LEFT")head.x-=box;
+  if(dir==="RIGHT")head.x+=box;
+  if(dir==="UP")head.y-=box;
+  if(dir==="DOWN")head.y+=box;
 
-  let headX=snake[0].x;
-  let headY=snake[0].y;
-
-  if(dir==="LEFT") headX-=box;
-  if(dir==="UP") headY-=box;
-  if(dir==="RIGHT") headX+=box;
-  if(dir==="DOWN") headY+=box;
-
-  if(headX===food.x && headY===food.y){
+  if(head.x===food.x&&head.y===food.y){
     score++;
-    document.getElementById("score").textContent="Puntos: "+score;
+    coins+=coinsPerApple;
+    localStorage.setItem("coins",coins);
+    scoreEl.textContent="Puntos: "+score+" | Monedas: "+coins;
     food=spawnFood();
-  }else{
-    snake.pop();
-  }
-
-  let newHead={x:headX,y:headY};
+  }else snake.pop();
 
   if(
-    headX<0||headY<0||
-    headX>=canvas.width||headY>=canvas.height||
-    collision(newHead,snake)
+    head.x<0||head.y<0||
+    head.x>=canvas.width||head.y>=canvas.height||
+    snake.some(s=>s.x===head.x&&s.y===head.y)
   ){
-    clearInterval(game);
-    alert("Perdiste 😢");
-    document.getElementById("menu").style.display="flex";
-    document.getElementById("hud").style.display="none";
+    clearInterval(interval);
+    alert("Perdiste");
+    backMenu();
     return;
   }
-
-  snake.unshift(newHead);
+  snake.unshift(head);
 }
+
+document.addEventListener("keydown",e=>{
+  if(e.key==="ArrowLeft"&&dir!=="RIGHT")dir="LEFT";
+  if(e.key==="ArrowRight"&&dir!=="LEFT")dir="RIGHT";
+  if(e.key==="ArrowUp"&&dir!=="DOWN")dir="UP";
+  if(e.key==="ArrowDown"&&dir!=="UP")dir="DOWN";
+});
+
+let xStart,yStart;
+canvas.addEventListener("touchstart",e=>{
+  xStart=e.touches[0].clientX;
+  yStart=e.touches[0].clientY;
+},{passive:false});
+
+canvas.addEventListener("touchmove",e=>{
+  e.preventDefault();
+  let dx=e.touches[0].clientX-xStart;
+  let dy=e.touches[0].clientY-yStart;
+  if(Math.abs(dx)>Math.abs(dy)){
+    if(dx>0&&dir!=="LEFT")dir="RIGHT";
+    if(dx<0&&dir!=="RIGHT")dir="LEFT";
+  }else{
+    if(dy>0&&dir!=="UP")dir="DOWN";
+    if(dy<0&&dir!=="DOWN")dir="UP";
+  }
+  xStart=e.touches[0].clientX;
+  yStart=e.touches[0].clientY;
+},{passive:false});
 </script>
 
 </body>
 </html>
-
-
