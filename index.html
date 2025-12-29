@@ -2,8 +2,8 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<title>🐍 Snake</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Snake Pro</title>
 
 <style>
 body {
@@ -14,264 +14,341 @@ body {
   text-align: center;
 }
 
-/* ===== MENÚ ===== */
-#menu {
-  height: 100vh;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-}
-
-#menu h1 {
-  font-size: 40px;
-  margin-bottom: 10px;
-}
-
-#monedas-menu {
-  margin-bottom: 15px;
-  font-size: 18px;
-}
-
-.menu-btn {
-  width: 220px;
-  padding: 14px;
-  margin: 6px;
-  font-size: 16px;
-  background: #222;
-  color: white;
-  border: 2px solid white;
-  border-radius: 8px;
-}
-
-/* ===== JUEGO ===== */
-#juego {
-  display: none;
-}
-
-#hud {
-  display: flex;
-  justify-content: space-around;
-  font-size: 18px;
-  margin-top: 10px;
-}
-
-#tablero {
-  position: relative;
-  width: 90vw;
-  max-width: 400px;
-  height: 90vw;
-  max-height: 400px;
-  background: black;
-  margin: 10px auto;
-  border: 2px solid white;
-}
-
-.serpiente {
-  position: absolute;
-  width: 20px;
-  height: 20px;
-  background: lime;
-}
-
-.comida {
-  position: absolute;
-  width: 20px;
-  height: 20px;
-  background: red;
-}
-
-/* ===== BOTONES MÓVIL ===== */
-.botones {
-  display: grid;
-  grid-template-columns: 60px 60px 60px;
-  justify-content: center;
-  gap: 5px;
-  margin-bottom: 20px;
-}
-
-.botones button {
-  font-size: 22px;
+button, input, select {
   padding: 10px;
-  background: #222;
-  color: white;
-  border: 2px solid white;
-  border-radius: 5px;
+  margin: 5px;
+  font-size: 16px;
+  border-radius: 8px;
+  border: none;
 }
 
-@media (min-width: 600px) {
-  .botones {
-    display: none;
-  }
+.hidden { display: none; }
+
+#board {
+  margin: auto;
+  width: 360px;
+  height: 360px;
+  position: relative;
+  border: 3px solid white;
+}
+
+.snake {
+  position: absolute;
+  width: 18px;
+  height: 18px;
+  border-radius: 4px;
+}
+
+.food {
+  position: absolute;
+  width: 18px;
+  height: 18px;
+  background: red;
+  border-radius: 50%;
+}
+
+/* Pantalla nombre */
+#nameScreen {
+  padding: 30px;
+}
+
+/* Desbloqueo */
+#unlockOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.7);
+  display: none;
+  align-items: center;
+  justify-content: center;
+}
+
+#unlockCard {
+  padding: 25px;
+  border-radius: 16px;
+  background: #222;
+  animation: pop 0.4s ease;
+}
+
+@keyframes pop {
+  from { transform: scale(0.5); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
 }
 </style>
 </head>
 
 <body>
 
-<!-- ===== MENÚ ===== -->
-<div id="menu">
-  <h1>🐍 Snake</h1>
-  <div id="monedas-menu">💰 Monedas: <span id="monedasTotal">0</span></div>
+<h1>🐍 Snake Pro</h1>
 
-  <button class="menu-btn" onclick="seleccionarDificultad('facil')">🐢 Jugar Fácil</button>
-  <button class="menu-btn" onclick="seleccionarDificultad('normal')">⚡ Jugar Normal</button>
-  <button class="menu-btn" onclick="seleccionarDificultad('dificil')">🔥 Jugar Difícil</button>
+<!-- PANTALLA NOMBRE -->
+<div id="nameScreen" class="hidden">
+  <h2>Ingresa tu nombre</h2>
+  <input id="nameInput" placeholder="Tu nombre">
+  <br>
+  <button onclick="saveName()">Continuar</button>
 </div>
 
-<!-- ===== JUEGO ===== -->
-<div id="juego">
-  <div id="hud">
-    <div>Puntaje: <span id="puntos">0</span></div>
-    <div>💰 <span id="monedasJuego">0</span></div>
-  </div>
+<!-- MENÚ -->
+<div id="menu" class="hidden">
+  <p>👤 Jugador: <b id="playerText"></b></p>
+  <p>🏆 Mejor puntaje: <b id="bestScoreText">0</b></p>
+  <p>💰 Monedas: <b id="coinsText">0</b></p>
 
-  <div id="tablero"></div>
+  <p>Dificultad:</p>
+  <select id="difficulty">
+    <option value="1">Fácil</option>
+    <option value="2" selected>Normal</option>
+    <option value="3">Difícil</option>
+  </select>
+  <br><br>
 
-  <div class="botones">
-    <div></div>
-    <button onclick="direccion='arriba'">↑</button>
-    <div></div>
-    <button onclick="direccion='izquierda'">←</button>
-    <button onclick="direccion='abajo'">↓</button>
-    <button onclick="direccion='derecha'">→</button>
+  <button onclick="startGame()">▶️ Jugar</button><br>
+  <button onclick="openShop('skins')">🐍 Tienda Skins</button>
+  <button onclick="openShop('boards')">🟩 Tienda Tableros</button>
+  <br>
+  <button onclick="changeName()">✏️ Cambiar nombre</button>
+</div>
+
+<div id="shopSkins" class="hidden"></div>
+<div id="shopBoards" class="hidden"></div>
+
+<!-- JUEGO -->
+<div id="game" class="hidden">
+  <p>Puntaje: <span id="scoreText">0</span></p>
+  <div id="board"></div>
+</div>
+
+<!-- DESBLOQUEO -->
+<div id="unlockOverlay">
+  <div id="unlockCard">
+    <h2 id="unlockTitle"></h2>
+    <button onclick="closeUnlock()">Continuar</button>
   </div>
 </div>
 
 <script>
-const menu = document.getElementById("menu");
-const juego = document.getElementById("juego");
-const tablero = document.getElementById("tablero");
-const puntosTexto = document.getElementById("puntos");
-const monedasJuegoTexto = document.getElementById("monedasJuego");
-const monedasMenuTexto = document.getElementById("monedasTotal");
+// ===== DATOS =====
+let playerName = localStorage.getItem("playerName");
+let bestScore = Number(localStorage.getItem("bestScore")) || 0;
+let coins = Number(localStorage.getItem("coins")) || 0;
 
-const tamaño = 20;
-let snake, direccion, comida, puntos, jugando, intervalo;
-let velocidad = 170;
-let monedasPorComida = 1;
+let unlockedSkins = JSON.parse(localStorage.getItem("skins")) || ["Verde"];
+let unlockedBoards = JSON.parse(localStorage.getItem("boards")) || ["Negro"];
+let currentSkin = localStorage.getItem("currentSkin") || "Verde";
+let currentBoard = localStorage.getItem("currentBoard") || "Negro";
 
-// ===== MONEDAS GUARDADAS =====
-let monedasTotales = parseInt(localStorage.getItem("monedas")) || 0;
-monedasMenuTexto.textContent = monedasTotales;
+// ===== LISTAS =====
+const skins = [
+ {name:"Verde", color:"#00ff7f", price:0},
+ {name:"Azul", color:"#1e90ff", price:20},
+ {name:"Rojo", color:"#ff3333", price:40},
+ {name:"Morado", color:"#8a2be2", price:60},
+ {name:"Dorado", color:"#ffd700", price:100},
+];
 
-// ===== SELECCIONAR DIFICULTAD =====
-function seleccionarDificultad(modo) {
-  if (modo === "facil") {
-    velocidad = 220;
-    monedasPorComida = 1;
-  }
-  if (modo === "normal") {
-    velocidad = 170;
-    monedasPorComida = 2;
-  }
-  if (modo === "dificil") {
-    velocidad = 130;
-    monedasPorComida = 3;
-  }
-  iniciarJuego();
+const skinsScore = [
+ {name:"Experto", color:"#006400", score:10},
+ {name:"Velocidad", color:"#00bfff", score:15},
+ {name:"Maestro", color:"#800080", score:20},
+ {name:"Élite", color:"#ff0000", score:25},
+ {name:"Leyenda", color:"#ffcc00", score:30},
+];
+
+const boards = [
+ {name:"Negro", color:"#000", price:0},
+ {name:"Noche", color:"#020024", price:30},
+ {name:"Bosque", color:"#013220", price:50},
+ {name:"Hielo", color:"#add8e6", price:70},
+ {name:"Lava", color:"#4b0000", price:100},
+];
+
+const boardsScore = [
+ {name:"Oscuro Pro", color:"#222", score:10},
+ {name:"Océano", color:"#001f3f", score:15},
+ {name:"Selva", color:"#004d00", score:20},
+ {name:"Inferno", color:"#660000", score:25},
+ {name:"Épico", color:"#3b2f2f", score:30},
+];
+
+// ===== INICIO =====
+if(!playerName){
+  nameScreen.classList.remove("hidden");
+}else{
+  showMenu();
 }
 
-// ===== INICIAR JUEGO =====
-function iniciarJuego() {
-  menu.style.display = "none";
-  juego.style.display = "block";
-
-  puntos = 0;
-  jugando = true;
-  direccion = "derecha";
-  snake = [{ x: 200, y: 200 }];
-  puntosTexto.textContent = puntos;
-  monedasJuegoTexto.textContent = monedasTotales;
-  comida = nuevaComida();
-
-  clearInterval(intervalo);
-  intervalo = setInterval(gameLoop, velocidad);
+function saveName(){
+  const val = nameInput.value.trim();
+  if(!val) return alert("Escribe un nombre");
+  playerName = val;
+  localStorage.setItem("playerName", playerName);
+  nameScreen.classList.add("hidden");
+  showMenu();
 }
 
-// ===== COMIDA =====
-function nuevaComida() {
-  const cols = Math.floor(tablero.clientWidth / tamaño);
-  const rows = Math.floor(tablero.clientHeight / tamaño);
-  let x, y;
-  do {
-    x = Math.floor(Math.random() * cols) * tamaño;
-    y = Math.floor(Math.random() * rows) * tamaño;
-  } while (snake.some(p => p.x === x && p.y === y));
-  return { x, y };
-}
-
-// ===== TECLADO =====
-document.addEventListener("keydown", e => {
-  if (e.key === "ArrowUp" && direccion !== "abajo") direccion = "arriba";
-  if (e.key === "ArrowDown" && direccion !== "arriba") direccion = "abajo";
-  if (e.key === "ArrowLeft" && direccion !== "derecha") direccion = "izquierda";
-  if (e.key === "ArrowRight" && direccion !== "izquierda") direccion = "derecha";
-});
-
-// ===== GAME LOOP =====
-function gameLoop() {
-  if (!jugando) return;
-
-  let cabeza = { ...snake[0] };
-  if (direccion === "arriba") cabeza.y -= tamaño;
-  if (direccion === "abajo") cabeza.y += tamaño;
-  if (direccion === "izquierda") cabeza.x -= tamaño;
-  if (direccion === "derecha") cabeza.x += tamaño;
-
-  if (
-    cabeza.x < 0 || cabeza.y < 0 ||
-    cabeza.x >= tablero.clientWidth ||
-    cabeza.y >= tablero.clientHeight ||
-    snake.some(p => p.x === cabeza.x && p.y === cabeza.y)
-  ) {
-    perder();
-    return;
-  }
-
-  snake.unshift(cabeza);
-
-  if (cabeza.x === comida.x && cabeza.y === comida.y) {
-    puntos++;
-    puntosTexto.textContent = puntos;
-
-    monedasTotales += monedasPorComida;
-    localStorage.setItem("monedas", monedasTotales);
-    monedasJuegoTexto.textContent = monedasTotales;
-    monedasMenuTexto.textContent = monedasTotales;
-
-    comida = nuevaComida();
-  } else {
-    snake.pop();
-  }
-
-  dibujar();
-}
-
-// ===== DIBUJAR =====
-function dibujar() {
-  tablero.innerHTML = "";
-  snake.forEach(p => {
-    const d = document.createElement("div");
-    d.className = "serpiente";
-    d.style.left = p.x + "px";
-    d.style.top = p.y + "px";
-    tablero.appendChild(d);
-  });
-  const c = document.createElement("div");
-  c.className = "comida";
-  c.style.left = comida.x + "px";
-  c.style.top = comida.y + "px";
-  tablero.appendChild(c);
-}
-
-// ===== PERDER =====
-function perder() {
-  jugando = false;
-  clearInterval(intervalo);
-  alert("Perdiste 😢");
+function changeName(){
+  localStorage.removeItem("playerName");
   location.reload();
 }
+
+function showMenu(){
+  menu.classList.remove("hidden");
+  playerText.textContent = playerName;
+  coinsText.textContent = coins;
+  bestScoreText.textContent = bestScore;
+}
+
+// ===== TIENDAS =====
+function openShop(type){
+  menu.classList.add("hidden");
+  let div = type==="skins"?shopSkins:shopBoards;
+  let list = type==="skins"?skins:boards;
+  let unlocked = type==="skins"?unlockedSkins:unlockedBoards;
+
+  div.innerHTML="<h2>Tienda</h2>";
+  list.forEach(i=>{
+    let owned = unlocked.includes(i.name);
+    div.innerHTML+=`
+      <p style="color:${i.color}">
+      ${i.name} - ${owned?"✅":i.price+" monedas"}
+      <button onclick="buy('${type}','${i.name}',${i.price})">Usar</button>
+      </p>`;
+  });
+  div.innerHTML+=`<button onclick="backMenu()">⬅️ Volver</button>`;
+  div.classList.remove("hidden");
+}
+
+function buy(type,name,price){
+  let unlocked = type==="skins"?unlockedSkins:unlockedBoards;
+  if(!unlocked.includes(name)){
+    if(coins<price) return alert("No tienes monedas");
+    coins-=price;
+    unlocked.push(name);
+  }
+  if(type==="skins") currentSkin=name;
+  else currentBoard=name;
+  save();
+  backMenu();
+}
+
+function backMenu(){
+  shopSkins.classList.add("hidden");
+  shopBoards.classList.add("hidden");
+  showMenu();
+}
+
+function save(){
+  localStorage.setItem("coins",coins);
+  localStorage.setItem("skins",JSON.stringify(unlockedSkins));
+  localStorage.setItem("boards",JSON.stringify(unlockedBoards));
+  localStorage.setItem("currentSkin",currentSkin);
+  localStorage.setItem("currentBoard",currentBoard);
+  localStorage.setItem("bestScore",bestScore);
+}
+
+// ===== JUEGO =====
+let snake, food, dir, score, interval;
+
+function startGame(){
+  menu.classList.add("hidden");
+  game.classList.remove("hidden");
+  board.style.background = boards.concat(boardsScore).find(b=>b.name===currentBoard)?.color||"#000";
+  snake=[{x:180,y:180}];
+  dir="right";
+  score=0;
+  scoreText.textContent=0;
+  spawnFood();
+  clearInterval(interval);
+  interval=setInterval(loop,280);
+}
+
+function loop(){
+  let h={...snake[0]};
+  if(dir==="right")h.x+=18;
+  if(dir==="left")h.x-=18;
+  if(dir==="up")h.y-=18;
+  if(dir==="down")h.y+=18;
+
+  if(h.x<0||h.y<0||h.x>=360||h.y>=360){
+    endGame(); return;
+  }
+
+  snake.unshift(h);
+
+  if(h.x===food.x&&h.y===food.y){
+    score++;
+    coins+=Number(difficulty.value);
+    scoreText.textContent=score;
+    spawnFood();
+  } else snake.pop();
+
+  draw();
+}
+
+function draw(){
+  board.innerHTML="";
+  snake.forEach(p=>{
+    let d=document.createElement("div");
+    d.className="snake";
+    d.style.background = skins.concat(skinsScore).find(s=>s.name===currentSkin)?.color||"lime";
+    d.style.left=p.x+"px";
+    d.style.top=p.y+"px";
+    board.appendChild(d);
+  });
+  let f=document.createElement("div");
+  f.className="food";
+  f.style.left=food.x+"px";
+  f.style.top=food.y+"px";
+  board.appendChild(f);
+}
+
+function spawnFood(){
+  food={x:Math.floor(Math.random()*20)*18,y:Math.floor(Math.random()*20)*18};
+}
+
+function endGame(){
+  clearInterval(interval);
+  if(score>bestScore){
+    bestScore=score;
+  }
+  checkUnlocks();
+  save();
+  game.classList.add("hidden");
+  showMenu();
+}
+
+// ===== DESBLOQUEOS =====
+function checkUnlocks(){
+  skinsScore.forEach(s=>{
+    if(score>=s.score&&!unlockedSkins.includes(s.name)){
+      unlockedSkins.push(s.name);
+      showUnlock("🐍 Skin desbloqueada: "+s.name,s.color);
+    }
+  });
+  boardsScore.forEach(b=>{
+    if(score>=b.score&&!unlockedBoards.includes(b.name)){
+      unlockedBoards.push(b.name);
+      showUnlock("🟩 Tablero desbloqueado: "+b.name,b.color);
+    }
+  });
+}
+
+function showUnlock(t,c){
+  unlockCard.style.border="3px solid "+c;
+  unlockTitle.textContent=t;
+  unlockOverlay.style.display="flex";
+}
+
+function closeUnlock(){
+  unlockOverlay.style.display="none";
+}
+
+document.addEventListener("keydown",e=>{
+  if(e.key==="ArrowUp")dir="up";
+  if(e.key==="ArrowDown")dir="down";
+  if(e.key==="ArrowLeft")dir="left";
+  if(e.key==="ArrowRight")dir="right";
+});
 </script>
 
 </body>
