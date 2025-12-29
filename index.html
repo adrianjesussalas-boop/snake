@@ -40,34 +40,74 @@ canvas{
 .equipped{
   outline:3px solid lime;
 }
+.mode-card{
+  background:#222;
+  padding:15px;
+  margin:10px auto;
+  width:80%;
+  border-radius:12px;
+}
+.mode-card button{
+  width:100%;
+}
 </style>
 </head>
 
 <body>
 
+<!-- MENÚ -->
 <div id="menu">
   <h1>🐍 Snake</h1>
-  <p>Monedas: <span id="coins">0</span></p>
+  <p>🪙 Monedas: <span id="coins">0</span></p>
+  <p>🏆 Récord: <span id="bestScore">0</span></p>
   <button onclick="showModes()">🎮 Jugar</button>
   <button onclick="openShop('snake')">🐍 Skins</button>
   <button onclick="openShop('board')">🟩 Tableros</button>
 </div>
 
+<!-- MODOS -->
 <div id="modes" style="display:none;">
-  <h2>Modo</h2>
-  <button onclick="setMode('facil')">Fácil</button>
-  <button onclick="setMode('normal')">Normal</button>
-  <button onclick="setMode('dificil')">Difícil</button>
-  <button onclick="setMode('extremo')">Extremo</button><br>
+  <h2>Selecciona Modo</h2>
+
+  <div class="mode-card">
+    <h3>🟢 Fácil</h3>
+    <p>Velocidad: Lenta</p>
+    <p>🪙 +1 por manzana</p>
+    <button onclick="setMode('facil')">Jugar</button>
+  </div>
+
+  <div class="mode-card">
+    <h3>🔵 Normal</h3>
+    <p>Velocidad: Media</p>
+    <p>🪙 +2 por manzana</p>
+    <button onclick="setMode('normal')">Jugar</button>
+  </div>
+
+  <div class="mode-card">
+    <h3>🟠 Difícil</h3>
+    <p>Velocidad: Rápida</p>
+    <p>🪙 +3 por manzana</p>
+    <button onclick="setMode('dificil')">Jugar</button>
+  </div>
+
+  <div class="mode-card">
+    <h3>🔴 Extremo</h3>
+    <p>Velocidad: Muy rápida</p>
+    <p>🪙 +4 por manzana</p>
+    <button onclick="setMode('extremo')">Jugar</button>
+  </div>
+
   <button onclick="backMenu()">⬅ Volver</button>
 </div>
 
+<!-- TIENDA -->
 <div id="shop" style="display:none;">
   <h2 id="shopTitle"></h2>
   <div class="shop" id="shopItems"></div>
   <button onclick="backMenu()">⬅ Volver</button>
 </div>
 
+<!-- JUEGO -->
 <div id="game" style="display:none;">
   <p id="score"></p>
   <canvas id="canvas" width="320" height="320"></canvas>
@@ -78,14 +118,13 @@ const canvas=document.getElementById("canvas");
 const ctx=canvas.getContext("2d");
 const box=20;
 
-let snake,food,dir,score,speed,coinsPerApple;
-let interval;
+let snake,food,dir,score,speed,coinsPerApple,interval;
 
 let coins=+localStorage.getItem("coins")||0;
+let bestScore=+localStorage.getItem("bestScore")||0;
 
 let ownedSkins=JSON.parse(localStorage.getItem("ownedSkins"))||[0];
 let ownedBoards=JSON.parse(localStorage.getItem("ownedBoards"))||[0];
-
 let skinEquipped=+localStorage.getItem("skinEquipped")||0;
 let boardEquipped=+localStorage.getItem("boardEquipped")||0;
 
@@ -99,16 +138,36 @@ const boards=[
 "#222200","#002222","#330033","#111133","#133311","#331111"
 ];
 
-function updateCoins(){
-  document.getElementById("coins").textContent=coins;
+function updateUI(){
+  coinsEl.textContent=coins;
+  bestScoreEl.textContent=bestScore;
 }
-updateCoins();
+updateUI();
 
+/* MENÚ */
+function hideAll(){
+  menu.style.display=modes.style.display=shop.style.display=game.style.display="none";
+}
+function backMenu(){
+  hideAll();
+  menu.style.display="block";
+  updateUI();
+}
 function showModes(){
   hideAll();
   modes.style.display="block";
 }
 
+/* MODOS */
+function setMode(m){
+  if(m==="facil"){speed=200;coinsPerApple=1;}
+  if(m==="normal"){speed=170;coinsPerApple=2;}
+  if(m==="dificil"){speed=120;coinsPerApple=3;}
+  if(m==="extremo"){speed=80;coinsPerApple=4;}
+  startGame();
+}
+
+/* TIENDA */
 function openShop(type){
   hideAll();
   shop.style.display="block";
@@ -147,42 +206,17 @@ function openShop(type){
           coins-=price;
           owned.push(i);
           localStorage.setItem("coins",coins);
-          localStorage.setItem(
-            type==="snake"?"ownedSkins":"ownedBoards",
-            JSON.stringify(owned)
-          );
-          updateCoins();
+          localStorage.setItem(type==="snake"?"ownedSkins":"ownedBoards",JSON.stringify(owned));
           openShop(type);
         }else alert("No tienes monedas");
       };
     }
-
     div.appendChild(btn);
     shopItems.appendChild(div);
   });
 }
 
-function backMenu(){
-  hideAll();
-  menu.style.display="block";
-  updateCoins();
-}
-
-function hideAll(){
-  menu.style.display="none";
-  modes.style.display="none";
-  shop.style.display="none";
-  game.style.display="none";
-}
-
-function setMode(m){
-  if(m==="facil"){speed=200;coinsPerApple=1;}
-  if(m==="normal"){speed=170;coinsPerApple=2;}
-  if(m==="dificil"){speed=120;coinsPerApple=3;}
-  if(m==="extremo"){speed=80;coinsPerApple=4;}
-  startGame();
-}
-
+/* JUEGO */
 function startGame(){
   hideAll();
   game.style.display="block";
@@ -190,16 +224,13 @@ function startGame(){
   food=spawnFood();
   dir="RIGHT";
   score=0;
-  scoreEl.textContent="Puntos: 0 | Monedas: "+coins;
+  scoreEl.textContent=`Puntos: 0 | 🪙 ${coins} | 🏆 ${bestScore}`;
   clearInterval(interval);
   interval=setInterval(draw,speed);
 }
 
 function spawnFood(){
-  return{
-    x:Math.floor(Math.random()*15)*box,
-    y:Math.floor(Math.random()*15)*box
-  };
+  return{ x:Math.floor(Math.random()*15)*box, y:Math.floor(Math.random()*15)*box };
 }
 
 function draw(){
@@ -223,24 +254,26 @@ function draw(){
   if(head.x===food.x&&head.y===food.y){
     score++;
     coins+=coinsPerApple;
+    if(score>bestScore){
+      bestScore=score;
+      localStorage.setItem("bestScore",bestScore);
+    }
     localStorage.setItem("coins",coins);
-    scoreEl.textContent="Puntos: "+score+" | Monedas: "+coins;
+    scoreEl.textContent=`Puntos: ${score} | 🪙 ${coins} | 🏆 ${bestScore}`;
     food=spawnFood();
   }else snake.pop();
 
-  if(
-    head.x<0||head.y<0||
-    head.x>=canvas.width||head.y>=canvas.height||
-    snake.some(s=>s.x===head.x&&s.y===head.y)
-  ){
+  if(head.x<0||head.y<0||head.x>=canvas.width||head.y>=canvas.height||
+     snake.some(s=>s.x===head.x&&s.y===head.y)){
     clearInterval(interval);
-    alert("Perdiste");
+    alert("Perdiste 😢");
     backMenu();
     return;
   }
   snake.unshift(head);
 }
 
+/* CONTROLES */
 document.addEventListener("keydown",e=>{
   if(e.key==="ArrowLeft"&&dir!=="RIGHT")dir="LEFT";
   if(e.key==="ArrowRight"&&dir!=="LEFT")dir="RIGHT";
