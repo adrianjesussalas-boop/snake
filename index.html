@@ -25,23 +25,23 @@ body {
 
 #menu h1 {
   font-size: 40px;
-  margin-bottom: 20px;
+  margin-bottom: 10px;
+}
+
+#monedas-menu {
+  margin-bottom: 15px;
+  font-size: 18px;
 }
 
 .menu-btn {
-  width: 200px;
-  padding: 15px;
-  margin: 10px;
-  font-size: 18px;
+  width: 220px;
+  padding: 14px;
+  margin: 6px;
+  font-size: 16px;
   background: #222;
   color: white;
   border: 2px solid white;
   border-radius: 8px;
-}
-
-.menu-btn:hover {
-  background: #444;
-  cursor: pointer;
 }
 
 /* ===== JUEGO ===== */
@@ -49,8 +49,10 @@ body {
   display: none;
 }
 
-#puntaje {
-  font-size: 22px;
+#hud {
+  display: flex;
+  justify-content: space-around;
+  font-size: 18px;
   margin-top: 10px;
 }
 
@@ -79,7 +81,7 @@ body {
   background: red;
 }
 
-/* ===== CONTROLES MÓVIL ===== */
+/* ===== BOTONES MÓVIL ===== */
 .botones {
   display: grid;
   grid-template-columns: 60px 60px 60px;
@@ -110,14 +112,20 @@ body {
 <!-- ===== MENÚ ===== -->
 <div id="menu">
   <h1>🐍 Snake</h1>
-  <button class="menu-btn" onclick="iniciarJuego()">▶ Jugar</button>
-  <button class="menu-btn" onclick="location.reload()">🔄 Reiniciar</button>
-  <button class="menu-btn" onclick="alert('Gracias por jugar 😄')">❌ Salir</button>
+  <div id="monedas-menu">💰 Monedas: <span id="monedasTotal">0</span></div>
+
+  <button class="menu-btn" onclick="seleccionarDificultad('facil')">🐢 Jugar Fácil</button>
+  <button class="menu-btn" onclick="seleccionarDificultad('normal')">⚡ Jugar Normal</button>
+  <button class="menu-btn" onclick="seleccionarDificultad('dificil')">🔥 Jugar Difícil</button>
 </div>
 
 <!-- ===== JUEGO ===== -->
 <div id="juego">
-  <div id="puntaje">Puntaje: <span id="puntos">0</span></div>
+  <div id="hud">
+    <div>Puntaje: <span id="puntos">0</span></div>
+    <div>💰 <span id="monedasJuego">0</span></div>
+  </div>
+
   <div id="tablero"></div>
 
   <div class="botones">
@@ -135,11 +143,36 @@ const menu = document.getElementById("menu");
 const juego = document.getElementById("juego");
 const tablero = document.getElementById("tablero");
 const puntosTexto = document.getElementById("puntos");
+const monedasJuegoTexto = document.getElementById("monedasJuego");
+const monedasMenuTexto = document.getElementById("monedasTotal");
 
 const tamaño = 20;
 let snake, direccion, comida, puntos, jugando, intervalo;
+let velocidad = 170;
+let monedasPorComida = 1;
 
-/* ===== INICIAR JUEGO ===== */
+// ===== MONEDAS GUARDADAS =====
+let monedasTotales = parseInt(localStorage.getItem("monedas")) || 0;
+monedasMenuTexto.textContent = monedasTotales;
+
+// ===== SELECCIONAR DIFICULTAD =====
+function seleccionarDificultad(modo) {
+  if (modo === "facil") {
+    velocidad = 220;
+    monedasPorComida = 1;
+  }
+  if (modo === "normal") {
+    velocidad = 170;
+    monedasPorComida = 2;
+  }
+  if (modo === "dificil") {
+    velocidad = 130;
+    monedasPorComida = 3;
+  }
+  iniciarJuego();
+}
+
+// ===== INICIAR JUEGO =====
 function iniciarJuego() {
   menu.style.display = "none";
   juego.style.display = "block";
@@ -149,13 +182,14 @@ function iniciarJuego() {
   direccion = "derecha";
   snake = [{ x: 200, y: 200 }];
   puntosTexto.textContent = puntos;
+  monedasJuegoTexto.textContent = monedasTotales;
   comida = nuevaComida();
 
   clearInterval(intervalo);
-  intervalo = setInterval(gameLoop, 350);
+  intervalo = setInterval(gameLoop, velocidad);
 }
 
-/* ===== COMIDA ===== */
+// ===== COMIDA =====
 function nuevaComida() {
   const cols = Math.floor(tablero.clientWidth / tamaño);
   const rows = Math.floor(tablero.clientHeight / tamaño);
@@ -163,11 +197,11 @@ function nuevaComida() {
   do {
     x = Math.floor(Math.random() * cols) * tamaño;
     y = Math.floor(Math.random() * rows) * tamaño;
-  } while (snake?.some(p => p.x === x && p.y === y));
+  } while (snake.some(p => p.x === x && p.y === y));
   return { x, y };
 }
 
-/* ===== CONTROLES TECLADO ===== */
+// ===== TECLADO =====
 document.addEventListener("keydown", e => {
   if (e.key === "ArrowUp" && direccion !== "abajo") direccion = "arriba";
   if (e.key === "ArrowDown" && direccion !== "arriba") direccion = "abajo";
@@ -175,7 +209,7 @@ document.addEventListener("keydown", e => {
   if (e.key === "ArrowRight" && direccion !== "izquierda") direccion = "derecha";
 });
 
-/* ===== GAME LOOP ===== */
+// ===== GAME LOOP =====
 function gameLoop() {
   if (!jugando) return;
 
@@ -200,6 +234,12 @@ function gameLoop() {
   if (cabeza.x === comida.x && cabeza.y === comida.y) {
     puntos++;
     puntosTexto.textContent = puntos;
+
+    monedasTotales += monedasPorComida;
+    localStorage.setItem("monedas", monedasTotales);
+    monedasJuegoTexto.textContent = monedasTotales;
+    monedasMenuTexto.textContent = monedasTotales;
+
     comida = nuevaComida();
   } else {
     snake.pop();
@@ -208,7 +248,7 @@ function gameLoop() {
   dibujar();
 }
 
-/* ===== DIBUJAR ===== */
+// ===== DIBUJAR =====
 function dibujar() {
   tablero.innerHTML = "";
   snake.forEach(p => {
@@ -225,7 +265,7 @@ function dibujar() {
   tablero.appendChild(c);
 }
 
-/* ===== PERDER ===== */
+// ===== PERDER =====
 function perder() {
   jugando = false;
   clearInterval(intervalo);
