@@ -3,44 +3,68 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>Snake</title>
+<title>Snake Game</title>
 
 <style>
 *{
   margin:0;
   padding:0;
   box-sizing:border-box;
+  font-family:Arial;
 }
 
 html,body{
   width:100%;
   height:100%;
-  background:black;
+  background:#111;
   overflow:hidden;
 }
 
-#gameContainer{
+/* ===== MENÚ ===== */
+#menu{
+  position:fixed;
+  inset:0;
+  background:#111;
   display:flex;
   flex-direction:column;
+  justify-content:center;
   align-items:center;
-  height:100vh;
+  gap:15px;
+  z-index:10;
 }
 
+#menu h1{
+  color:lime;
+  font-size:40px;
+}
+
+.menu-btn{
+  padding:12px 30px;
+  font-size:18px;
+  border:none;
+  border-radius:8px;
+  cursor:pointer;
+}
+
+.play{background:lime;}
+.mode{background:#09f;color:white;}
+.back{background:#f33;color:white;}
+
+/* ===== HUD ===== */
 #hud{
   width:100%;
   padding:10px;
+  color:white;
   display:flex;
   justify-content:space-between;
-  color:white;
-  font-family:Arial;
-  font-size:18px;
+  background:#000;
 }
 
+/* ===== CANVAS ===== */
 canvas{
-  flex-grow:1;
   background:black;
-  max-width:100vw;
-  aspect-ratio:1/1;
+  display:block;
+  margin:auto;
   touch-action:none;
 }
 </style>
@@ -48,99 +72,117 @@ canvas{
 
 <body>
 
-<div id="gameContainer">
-  <div id="hud">
-    <span id="score">Score: 0</span>
-    <span id="record">Record: 0</span>
-  </div>
-  <canvas id="game"></canvas>
+<!-- MENÚ -->
+<div id="menu">
+  <h1>🐍 Snake</h1>
+  <button class="menu-btn play" onclick="startFromMenu()">Jugar</button>
+  <button class="menu-btn mode" onclick="setMode('facil')">Fácil</button>
+  <button class="menu-btn mode" onclick="setMode('normal')">Normal</button>
+  <button class="menu-btn mode" onclick="setMode('dificil')">Difícil</button>
 </div>
 
+<!-- HUD -->
+<div id="hud" style="display:none">
+  <span id="score">Puntos: 0</span>
+  <span id="mode">Modo: Normal</span>
+</div>
+
+<canvas id="game"></canvas>
+
 <script>
-// ===============================
+// =======================
 // CANVAS RESPONSIVO
-// ===============================
+// =======================
 const canvas = document.getElementById("game");
 const ctx = canvas.getContext("2d");
 
-function resizeCanvas(){
-  const size = Math.min(window.innerWidth, window.innerHeight - 60);
+function resize(){
+  const size = Math.min(window.innerWidth, window.innerHeight - 50);
   canvas.width = size;
   canvas.height = size;
 }
-window.addEventListener("resize", resizeCanvas);
-resizeCanvas();
+window.addEventListener("resize", resize);
+resize();
 
-// ===============================
-// BLOQUEAR SCROLL SOLO EN CANVAS
-// ===============================
+// =======================
+// BLOQUEAR SCROLL
+// =======================
 canvas.addEventListener("touchmove", e=>{
   e.preventDefault();
 },{passive:false});
 
-// ===============================
+// =======================
 // VARIABLES
-// ===============================
+// =======================
 const box = 20;
-let snake, food, dir, score;
+let snake, food, dir, score, game;
 let speed = 170;
-let game;
+let currentMode = "Normal";
 
-// ===============================
-// RECORD PERSONAL
-// ===============================
-let record = localStorage.getItem("record") || 0;
-document.getElementById("record").textContent = "Record: " + record;
+// =======================
+// MODOS
+// =======================
+function setMode(m){
+  if(m==="facil"){ speed = 220; currentMode="Fácil"; }
+  if(m==="normal"){ speed = 170; currentMode="Normal"; }
+  if(m==="dificil"){ speed = 120; currentMode="Difícil"; }
+  document.getElementById("mode").textContent = "Modo: " + currentMode;
+}
 
-// ===============================
+// =======================
+// INICIAR DESDE MENÚ
+// =======================
+function startFromMenu(){
+  document.getElementById("menu").style.display="none";
+  document.getElementById("hud").style.display="flex";
+  startGame();
+}
+
+// =======================
 // INICIAR JUEGO
-// ===============================
+// =======================
 function startGame(){
   snake = [{x:9*box,y:9*box}];
   dir = "RIGHT";
   score = 0;
-  document.getElementById("score").textContent = "Score: 0";
   food = spawnFood();
+  document.getElementById("score").textContent="Puntos: 0";
   clearInterval(game);
   game = setInterval(draw, speed);
 }
 
-// ===============================
-// COMIDA (NO BORDE)
-// ===============================
+// =======================
+// COMIDA
+// =======================
 function spawnFood(){
   return {
-    x: Math.floor(Math.random()*18 + 1)*box,
-    y: Math.floor(Math.random()*18 + 1)*box
+    x: Math.floor(Math.random()*18+1)*box,
+    y: Math.floor(Math.random()*18+1)*box
   };
 }
 
-// ===============================
+// =======================
 // TECLADO (PC)
-// ===============================
-document.addEventListener("keydown",e=>{
+// =======================
+document.addEventListener("keydown", e=>{
   if(e.key==="ArrowLeft" && dir!=="RIGHT") dir="LEFT";
   if(e.key==="ArrowUp" && dir!=="DOWN") dir="UP";
   if(e.key==="ArrowRight" && dir!=="LEFT") dir="RIGHT";
   if(e.key==="ArrowDown" && dir!=="UP") dir="DOWN";
 });
 
-// ===============================
-// SWIPE (CELULAR) ✔✔✔
-// ===============================
+// =======================
+// SWIPE (CELULAR) ✔
+// =======================
 let startX=0,startY=0;
-const swipeThreshold = 30;
-
 canvas.addEventListener("touchstart",e=>{
-  startX = e.touches[0].clientX;
-  startY = e.touches[0].clientY;
-},{passive:true});
+  startX=e.touches[0].clientX;
+  startY=e.touches[0].clientY;
+});
 
 canvas.addEventListener("touchend",e=>{
-  const dx = e.changedTouches[0].clientX - startX;
-  const dy = e.changedTouches[0].clientY - startY;
-
-  if(Math.abs(dx)<swipeThreshold && Math.abs(dy)<swipeThreshold) return;
+  const dx=e.changedTouches[0].clientX-startX;
+  const dy=e.changedTouches[0].clientY-startY;
 
   if(Math.abs(dx)>Math.abs(dy)){
     if(dx>0 && dir!=="LEFT") dir="RIGHT";
@@ -151,16 +193,16 @@ canvas.addEventListener("touchend",e=>{
   }
 });
 
-// ===============================
-// COLISION SERPIENTE
-// ===============================
+// =======================
+// COLISIÓN
+// =======================
 function collision(head,array){
-  return array.some(seg=>seg.x===head.x && seg.y===head.y);
+  return array.some(p=>p.x===head.x&&p.y===head.y);
 }
 
-// ===============================
+// =======================
 // DIBUJO
-// ===============================
+// =======================
 function draw(){
   ctx.fillStyle="black";
   ctx.fillRect(0,0,canvas.width,canvas.height);
@@ -170,13 +212,13 @@ function draw(){
   ctx.fillRect(food.x,food.y,box,box);
 
   // serpiente
-  for(let i=0;i<snake.length;i++){
-    ctx.fillStyle = i===0 ? "lime" : "green";
-    ctx.fillRect(snake[i].x,snake[i].y,box,box);
-  }
+  snake.forEach((p,i)=>{
+    ctx.fillStyle=i===0?"lime":"green";
+    ctx.fillRect(p.x,p.y,box,box);
+  });
 
-  let headX = snake[0].x;
-  let headY = snake[0].y;
+  let headX=snake[0].x;
+  let headY=snake[0].y;
 
   if(dir==="LEFT") headX-=box;
   if(dir==="UP") headY-=box;
@@ -185,8 +227,8 @@ function draw(){
 
   if(headX===food.x && headY===food.y){
     score++;
-    document.getElementById("score").textContent="Score: "+score;
-    food = spawnFood();
+    document.getElementById("score").textContent="Puntos: "+score;
+    food=spawnFood();
   }else{
     snake.pop();
   }
@@ -194,26 +236,19 @@ function draw(){
   let newHead={x:headX,y:headY};
 
   if(
-    headX<0 || headY<0 ||
-    headX>=canvas.width || headY>=canvas.height ||
+    headX<0||headY<0||
+    headX>=canvas.width||headY>=canvas.height||
     collision(newHead,snake)
   ){
     clearInterval(game);
-    if(score>record){
-      record=score;
-      localStorage.setItem("record",record);
-    }
-    alert("Game Over 😢");
-    startGame();
+    alert("Perdiste 😢");
+    document.getElementById("menu").style.display="flex";
+    document.getElementById("hud").style.display="none";
     return;
   }
 
   snake.unshift(newHead);
 }
-
-// ===============================
-startGame();
-// ===============================
 </script>
 
 </body>
