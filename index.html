@@ -21,11 +21,7 @@ button,select{
   cursor:pointer;
 }
 
-#menu,#shopSkins,#shopBoards{
-  display:none;
-}
-
-#game{
+#menu,#shopSkins,#shopBoards,#game{
   display:none;
 }
 
@@ -53,10 +49,13 @@ canvas{
 
 <h1>🐍 Snake</h1>
 
+<!-- MENÚ -->
 <div id="menu">
   <select id="mode">
-    <option value="normal">Modo Normal</option>
-    <option value="extremo">Modo Extremo</option>
+    <option value="facil">🟢 Fácil</option>
+    <option value="normal">🟡 Normal</option>
+    <option value="dificil">🔴 Difícil</option>
+    <option value="extremo">🔥 Extremo</option>
   </select><br>
 
   <button onclick="startGame()">▶ Jugar</button><br>
@@ -64,6 +63,7 @@ canvas{
   <button onclick="openShop('boards')">🟦 Tienda Tableros</button>
 </div>
 
+<!-- JUEGO -->
 <div id="game">
   <p>Puntaje: <span id="score">0</span> | Monedas: <span id="coins">0</span></p>
   <button onclick="pauseGame()">⏸ Pausa</button>
@@ -72,12 +72,14 @@ canvas{
   <button onclick="backMenu()">⬅ Menú</button>
 </div>
 
+<!-- TIENDA SKINS -->
 <div id="shopSkins" class="shop">
   <h2>🎨 Skins</h2>
   <div id="skins"></div>
   <button onclick="backMenu()">⬅ Volver</button>
 </div>
 
+<!-- TIENDA TABLEROS -->
 <div id="shopBoards" class="shop">
   <h2>🟦 Tableros</h2>
   <div id="boards"></div>
@@ -88,10 +90,10 @@ canvas{
 const canvas=document.getElementById("canvas");
 const ctx=canvas.getContext("2d");
 
-let box=20;
+const box=20;
 let snake,food,dir,score,coins,interval,paused=false;
-coins=parseInt(localStorage.getItem("coins"))||0;
 
+coins=parseInt(localStorage.getItem("coins"))||0;
 document.getElementById("coins").innerText=coins;
 
 const skins=[
@@ -139,14 +141,26 @@ function startGame(){
   y:Math.floor(Math.random()*20)*box
  };
 
- let speed=document.getElementById("mode").value==="extremo"?100:170;
- if(document.getElementById("mode").value==="extremo") coins+=5;
+ document.getElementById("score").innerText=0;
 
+ let mode=document.getElementById("mode").value;
+ let speed=170;
+
+ if(mode==="facil") speed=230;
+ if(mode==="normal") speed=170;
+ if(mode==="dificil") speed=130;
+ if(mode==="extremo"){
+   speed=100;
+   coins+=5;
+ }
+
+ document.getElementById("coins").innerText=coins;
  interval=setInterval(draw,speed);
 }
 
 function draw(){
  if(paused) return;
+
  ctx.fillStyle=board;
  ctx.fillRect(0,0,400,400);
 
@@ -165,14 +179,11 @@ function draw(){
  if(dir==="DOWN") head.y+=box;
 
  if(head.x<0||head.x>=400||head.y<0||head.y>=400){
-  clearInterval(interval);
-  localStorage.setItem("coins",coins);
-  alert("Perdiste 😢");
-  backMenu();
+  gameOver();
   return;
  }
 
- if(head.x===food.x&&head.y===food.y){
+ if(head.x===food.x && head.y===food.y){
   score++;
   coins++;
   document.getElementById("score").innerText=score;
@@ -188,6 +199,13 @@ function draw(){
  snake.unshift(head);
 }
 
+function gameOver(){
+ clearInterval(interval);
+ localStorage.setItem("coins",coins);
+ alert("Perdiste 😢");
+ backMenu();
+}
+
 document.addEventListener("keydown",e=>{
  if(e.key==="ArrowLeft")dir="LEFT";
  if(e.key==="ArrowRight")dir="RIGHT";
@@ -201,14 +219,12 @@ canvas.addEventListener("touchstart",e=>{
  yStart=e.touches[0].clientY;
 });
 canvas.addEventListener("touchend",e=>{
- let xEnd=e.changedTouches[0].clientX;
- let yEnd=e.changedTouches[0].clientY;
- let dx=xEnd-xStart;
- let dy=yEnd-yStart;
+ let dx=e.changedTouches[0].clientX-xStart;
+ let dy=e.changedTouches[0].clientY-yStart;
  if(Math.abs(dx)>Math.abs(dy)){
-  if(dx>0)dir="RIGHT"; else dir="LEFT";
+  dir=dx>0?"RIGHT":"LEFT";
  }else{
-  if(dy>0)dir="DOWN"; else dir="UP";
+  dir=dy>0?"DOWN":"UP";
  }
 });
 
@@ -268,6 +284,3 @@ document.getElementById("menu").style.display="block";
 
 </body>
 </html>
-
-
-
