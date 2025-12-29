@@ -4,7 +4,6 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 <title>Snake Game</title>
-
 <style>
 body{
   margin:0;
@@ -25,7 +24,11 @@ button{
 canvas{
   background:#000;
   display:block;
-  margin:0 auto;
+  margin:15px auto;
+  width:90vw;
+  max-width:400px;
+  aspect-ratio:1/1;
+  border:3px solid #555;
 }
 .shop{
   display:grid;
@@ -68,35 +71,30 @@ canvas{
 <!-- MODOS -->
 <div id="modes" style="display:none;">
   <h2>Selecciona Modo</h2>
-
   <div class="mode-card">
     <h3>🟢 Fácil</h3>
     <p>Velocidad: Lenta</p>
     <p>🪙 +1 por manzana</p>
     <button onclick="setMode('facil')">Jugar</button>
   </div>
-
   <div class="mode-card">
     <h3>🔵 Normal</h3>
     <p>Velocidad: Media</p>
     <p>🪙 +2 por manzana</p>
     <button onclick="setMode('normal')">Jugar</button>
   </div>
-
   <div class="mode-card">
     <h3>🟠 Difícil</h3>
     <p>Velocidad: Rápida</p>
     <p>🪙 +3 por manzana</p>
     <button onclick="setMode('dificil')">Jugar</button>
   </div>
-
   <div class="mode-card">
     <h3>🔴 Extremo</h3>
     <p>Velocidad: Muy rápida</p>
     <p>🪙 +4 por manzana</p>
     <button onclick="setMode('extremo')">Jugar</button>
   </div>
-
   <button onclick="backMenu()">⬅ Volver</button>
 </div>
 
@@ -110,7 +108,7 @@ canvas{
 <!-- JUEGO -->
 <div id="game" style="display:none;">
   <p id="score"></p>
-  <canvas id="canvas" width="320" height="320"></canvas>
+  <canvas id="canvas"></canvas>
 </div>
 
 <script>
@@ -137,6 +135,15 @@ const boards=[
 "#000","#111","#222","#003300","#330000","#001133",
 "#222200","#002222","#330033","#111133","#133311","#331111"
 ];
+
+const coinsEl=document.getElementById("coins");
+const bestScoreEl=document.getElementById("bestScore");
+const scoreEl=document.getElementById("score");
+const menu=document.getElementById("menu");
+const modes=document.getElementById("modes");
+const shop=document.getElementById("shop");
+const shopItems=document.getElementById("shopItems");
+const shopTitle=document.getElementById("shopTitle");
 
 function updateUI(){
   coinsEl.textContent=coins;
@@ -216,21 +223,32 @@ function openShop(type){
   });
 }
 
+/* RESIZE CANVAS */
+function resizeCanvas(){
+  let size = Math.min(window.innerWidth*0.9, 400);
+  canvas.width=Math.floor(size/box)*box;
+  canvas.height=canvas.width;
+}
+
 /* JUEGO */
 function startGame(){
   hideAll();
   game.style.display="block";
+  resizeCanvas();
+
   snake=[{x:5*box,y:5*box}];
   food=spawnFood();
   dir="RIGHT";
   score=0;
-  scoreEl.textContent=`Puntos: 0 | 🪙 ${coins} | 🏆 ${bestScore}`;
+  scoreEl.textContent=`Puntos: ${score} | 🪙 ${coins} | 🏆 ${bestScore}`;
   clearInterval(interval);
   interval=setInterval(draw,speed);
 }
 
 function spawnFood(){
-  return{ x:Math.floor(Math.random()*15)*box, y:Math.floor(Math.random()*15)*box };
+  let cols=canvas.width/box;
+  let rows=canvas.height/box;
+  return {x:Math.floor(Math.random()*cols)*box, y:Math.floor(Math.random()*rows)*box};
 }
 
 function draw(){
@@ -251,7 +269,7 @@ function draw(){
   if(dir==="UP")head.y-=box;
   if(dir==="DOWN")head.y+=box;
 
-  if(head.x===food.x&&head.y===food.y){
+  if(head.x===food.x && head.y===food.y){
     score++;
     coins+=coinsPerApple;
     if(score>bestScore){
@@ -264,7 +282,7 @@ function draw(){
   }else snake.pop();
 
   if(head.x<0||head.y<0||head.x>=canvas.width||head.y>=canvas.height||
-     snake.some(s=>s.x===head.x&&s.y===head.y)){
+     snake.some(s=>s.x===head.x && s.y===head.y)){
     clearInterval(interval);
     alert("Perdiste 😢");
     backMenu();
