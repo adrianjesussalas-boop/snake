@@ -2,313 +2,281 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
+<title>Snake Game</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Snake Pro</title>
 
 <style>
-body{
-  margin:0;
-  background:#111;
-  color:white;
-  font-family:Arial;
-  text-align:center;
-  overflow:hidden;
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background: #111;
+  color: white;
+  text-align: center;
 }
 
-button,input,select{
-  padding:10px;
-  border-radius:8px;
-  border:none;
-  font-size:16px;
-  margin:5px;
+.hidden { display: none; }
+
+button, select {
+  padding: 10px;
+  font-size: 16px;
+  margin: 5px;
 }
 
-.hidden{display:none;}
-
-#board{
-  width:360px;
-  height:360px;
-  margin:auto;
-  position:relative;
-  border:3px solid white;
+#menu, #pauseScreen, #shopSkins, #shopBoards {
+  padding: 20px;
 }
 
-.snake{
-  width:18px;
-  height:18px;
-  position:absolute;
-  border-radius:4px;
+#gameContainer {
+  display: flex;
+  justify-content: center;
 }
 
-.food{
-  width:18px;
-  height:18px;
-  position:absolute;
-  background:red;
-  border-radius:50%;
+#board {
+  width: 400px;
+  height: 400px;
+  background: black;
+  position: relative;
 }
 
-/* TIENDA BLANCA */
-.shop{
-  background:white;
-  color:black;
-  min-height:100vh;
-  padding:20px;
+.snake {
+  width: 20px;
+  height: 20px;
+  position: absolute;
 }
 
-.shop button{
-  background:#111;
-  color:white;
+.food {
+  width: 20px;
+  height: 20px;
+  position: absolute;
+  background: red;
 }
 
-/* OVERLAY */
-#unlockOverlay{
-  position:fixed;
-  inset:0;
-  background:rgba(0,0,0,.7);
-  display:none;
-  align-items:center;
-  justify-content:center;
+#pauseScreen {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,.8);
 }
 
-#unlockCard{
-  background:#222;
-  padding:25px;
-  border-radius:15px;
+#shopSkins {
+  background: white;
+  color: black;
+}
+
+.shop-item {
+  border: 1px solid #ccc;
+  padding: 10px;
+  margin: 5px;
 }
 </style>
 </head>
 
 <body>
 
-<h1>🐍 Snake Pro</h1>
+<div id="menu">
+  <h2>🐍 Snake</h2>
+  <p id="playerInfo"></p>
 
-<div id="nameScreen" class="hidden">
-  <h2>Ingresa tu nombre</h2>
-  <input id="nameInput" placeholder="Tu nombre">
-  <br>
-  <button onclick="saveName()">Continuar</button>
+  <select id="modeSelect">
+    <option value="easy">Fácil</option>
+    <option value="normal">Normal</option>
+    <option value="hard">Difícil</option>
+    <option value="extreme">Extremo 🔥</option>
+  </select><br>
+
+  <button onclick="startGame()">Jugar</button>
+  <button onclick="openSkins()">Tienda Skins</button>
+  <button onclick="openBoards()">Tienda Tableros</button>
 </div>
-
-<div id="menu" class="hidden">
-  <p>👤 <b id="playerText"></b></p>
-  <p>🏆 Mejor puntaje: <b id="bestScoreText"></b></p>
-  <p>💰 Monedas: <b id="coinsText"></b></p>
-
-  <select id="difficulty">
-    <option value="1">Fácil</option>
-    <option value="2" selected>Normal</option>
-    <option value="3">Difícil</option>
-  </select>
-  <br><br>
-
-  <button onclick="startGame()">▶️ Jugar</button><br>
-  <button onclick="openShop('skins')">🐍 Skins</button>
-  <button onclick="openShop('boards')">🟩 Tableros</button>
-</div>
-
-<div id="shopSkins" class="shop hidden"></div>
-<div id="shopBoards" class="shop hidden"></div>
 
 <div id="game" class="hidden">
-  <p>Puntaje: <span id="scoreText">0</span></p>
-  <div id="board"></div>
+  <p>Puntaje: <span id="score">0</span></p>
+  <div id="gameContainer">
+    <div id="board"></div>
+  </div>
 </div>
 
-<div id="unlockOverlay">
-  <div id="unlockCard">
-    <h2 id="unlockTitle"></h2>
-    <button onclick="closeUnlock()">OK</button>
-  </div>
+<div id="pauseScreen" class="hidden">
+  <h2>⏸️ JUEGO EN PAUSA</h2>
+  <button onclick="togglePause()">Reanudar</button>
+</div>
+
+<div id="shopSkins" class="hidden">
+  <h2>Tienda de Skins</h2>
+  <div id="skinsList"></div>
+  <button onclick="backMenu()">Volver</button>
+</div>
+
+<div id="shopBoards" class="hidden">
+  <h2>Tienda de Tableros</h2>
+  <div id="boardsList"></div>
+  <button onclick="backMenu()">Volver</button>
 </div>
 
 <script>
 /* ===== DATOS ===== */
-let playerName=localStorage.getItem("playerName");
-let bestScore=+localStorage.getItem("bestScore")||0;
-let coins=+localStorage.getItem("coins")||0;
+const size = 20;
+const boardSize = 400;
 
-let unlockedSkins=JSON.parse(localStorage.getItem("skins"))||["Verde"];
-let unlockedBoards=JSON.parse(localStorage.getItem("boards"))||["Negro"];
-let currentSkin=localStorage.getItem("currentSkin")||"Verde";
-let currentBoard=localStorage.getItem("currentBoard")||"Negro";
+const speeds = {
+  easy: 250,
+  normal: 170,
+  hard: 120,
+  extreme: 90
+};
 
-/* ===== LISTAS ===== */
-const skins=[
- {name:"Verde",color:"#00ff7f",price:0},
- {name:"Azul",color:"#1e90ff",price:30},
- {name:"Rojo",color:"#ff3333",price:50},
- {name:"Dorado",color:"#ffd700",price:100}
-];
+const coinsPerMode = {
+  easy: 1,
+  normal: 2,
+  hard: 3,
+  extreme: 5
+};
 
-const boards=[
- {name:"Negro",color:"#000",price:0},
- {name:"Bosque",color:"#013220",price:40},
- {name:"Lava",color:"#4b0000",price:80}
-];
-
-/* ===== INICIO ===== */
-if(!playerName){
-  nameScreen.classList.remove("hidden");
-}else showMenu();
-
-function saveName(){
-  if(!nameInput.value) return;
-  playerName=nameInput.value;
-  localStorage.setItem("playerName",playerName);
-  nameScreen.classList.add("hidden");
-  showMenu();
+let player = localStorage.getItem("playerName");
+if (!player) {
+  player = prompt("Ingresa tu nombre:");
+  localStorage.setItem("playerName", player);
 }
 
-function showMenu(){
-  menu.classList.remove("hidden");
-  playerText.textContent=playerName;
-  bestScoreText.textContent=bestScore;
-  coinsText.textContent=coins;
-}
+let bestScore = Number(localStorage.getItem("bestScore")) || 0;
+let coins = Number(localStorage.getItem("coins")) || 0;
 
-/* ===== TIENDAS ===== */
-function openShop(type){
-  menu.classList.add("hidden");
-  let div=type==="skins"?shopSkins:shopBoards;
-  let list=type==="skins"?skins:boards;
-  let unlocked=type==="skins"?unlockedSkins:unlockedBoards;
-
-  div.innerHTML="<h2>Tienda</h2>";
-  list.forEach(i=>{
-    let own=unlocked.includes(i.name);
-    div.innerHTML+=`
-      <p style="color:${i.color}">
-        ${i.name} - ${own?"✅":i.price+" monedas"}
-        <button onclick="buy('${type}','${i.name}',${i.price})">Usar</button>
-      </p>`;
-  });
-  div.innerHTML+=`<button onclick="backMenu()">⬅️ Volver</button>`;
-  div.classList.remove("hidden");
-}
-
-function buy(type,name,price){
-  let unlocked=type==="skins"?unlockedSkins:unlockedBoards;
-  if(!unlocked.includes(name)){
-    if(coins<price) return alert("No tienes monedas");
-    coins-=price;
-    unlocked.push(name);
-  }
-  if(type==="skins") currentSkin=name;
-  else currentBoard=name;
-  save();
-  backMenu();
-}
-
-function backMenu(){
-  shopSkins.classList.add("hidden");
-  shopBoards.classList.add("hidden");
-  showMenu();
-}
-
-function save(){
-  localStorage.setItem("coins",coins);
-  localStorage.setItem("bestScore",bestScore);
-  localStorage.setItem("skins",JSON.stringify(unlockedSkins));
-  localStorage.setItem("boards",JSON.stringify(unlockedBoards));
-  localStorage.setItem("currentSkin",currentSkin);
-  localStorage.setItem("currentBoard",currentBoard);
-}
+const info = document.getElementById("playerInfo");
+info.innerText = `👤 ${player} | 🏆 ${bestScore} | 💰 ${coins}`;
 
 /* ===== JUEGO ===== */
-let snake,food,dir,score,loop;
+let snake, food, dir, interval, score = 0;
+let paused = false;
+let currentMode = "easy";
+const board = document.getElementById("board");
 
-function startGame(){
-  menu.classList.add("hidden");
-  game.classList.remove("hidden");
-  board.style.background=boards.find(b=>b.name===currentBoard)?.color||"#000";
-  snake=[{x:180,y:180}];
-  dir="right";
-  score=0;
-  scoreText.textContent=0;
+function startGame() {
+  currentMode = document.getElementById("modeSelect").value;
+  document.getElementById("menu").classList.add("hidden");
+  document.getElementById("game").classList.remove("hidden");
+
+  snake = [{x: 200, y: 200}];
+  dir = "right";
+  score = 0;
+  document.getElementById("score").innerText = score;
   spawnFood();
-  clearInterval(loop);
-  loop=setInterval(gameLoop,280);
+  clearInterval(interval);
+  interval = setInterval(loop, speeds[currentMode]);
 }
 
-function gameLoop(){
-  let h={...snake[0]};
-  if(dir==="up")h.y-=18;
-  if(dir==="down")h.y+=18;
-  if(dir==="left")h.x-=18;
-  if(dir==="right")h.x+=18;
+function spawnFood() {
+  food = {
+    x: Math.floor(Math.random() * 20) * size,
+    y: Math.floor(Math.random() * 20) * size
+  };
+}
 
-  if(h.x<0||h.y<0||h.x>=360||h.y>=360){
-    endGame();return;
+function loop() {
+  if (paused) return;
+
+  let head = {...snake[0]};
+  if (dir === "up") head.y -= size;
+  if (dir === "down") head.y += size;
+  if (dir === "left") head.x -= size;
+  if (dir === "right") head.x += size;
+
+  if (head.x < 0 || head.y < 0 || head.x >= boardSize || head.y >= boardSize) {
+    endGame();
+    return;
   }
 
-  snake.unshift(h);
-  if(h.x===food.x&&h.y===food.y){
+  snake.unshift(head);
+
+  if (head.x === food.x && head.y === food.y) {
     score++;
-    coins+=+difficulty.value;
-    scoreText.textContent=score;
+    document.getElementById("score").innerText = score;
     spawnFood();
-  }else snake.pop();
+  } else {
+    snake.pop();
+  }
 
   draw();
 }
 
-function draw(){
-  board.innerHTML="";
-  snake.forEach(p=>{
-    let d=document.createElement("div");
-    d.className="snake";
-    d.style.background=skins.find(s=>s.name===currentSkin)?.color||"lime";
-    d.style.left=p.x+"px";
-    d.style.top=p.y+"px";
+function draw() {
+  board.innerHTML = "";
+  snake.forEach(s => {
+    let d = document.createElement("div");
+    d.className = "snake";
+    d.style.background = "lime";
+    d.style.left = s.x + "px";
+    d.style.top = s.y + "px";
     board.appendChild(d);
   });
-  let f=document.createElement("div");
-  f.className="food";
-  f.style.left=food.x+"px";
-  f.style.top=food.y+"px";
+
+  let f = document.createElement("div");
+  f.className = "food";
+  f.style.left = food.x + "px";
+  f.style.top = food.y + "px";
   board.appendChild(f);
 }
 
-function spawnFood(){
-  food={x:Math.floor(Math.random()*20)*18,y:Math.floor(Math.random()*20)*18};
+function endGame() {
+  clearInterval(interval);
+  coins += coinsPerMode[currentMode];
+  localStorage.setItem("coins", coins);
+
+  if (score > bestScore) {
+    bestScore = score;
+    localStorage.setItem("bestScore", bestScore);
+  }
+
+  alert("Perdiste 😢");
+  location.reload();
 }
 
-function endGame(){
-  clearInterval(loop);
-  if(score>bestScore) bestScore=score;
-  save();
-  game.classList.add("hidden");
-  showMenu();
+/* ===== PAUSA ===== */
+function togglePause() {
+  paused = !paused;
+  document.getElementById("pauseScreen").classList.toggle("hidden");
 }
 
-/* ===== CONTROLES ===== */
-document.addEventListener("keydown",e=>{
-  if(e.key==="ArrowUp"&&dir!=="down")dir="up";
-  if(e.key==="ArrowDown"&&dir!=="up")dir="down";
-  if(e.key==="ArrowLeft"&&dir!=="right")dir="left";
-  if(e.key==="ArrowRight"&&dir!=="left")dir="right";
+document.addEventListener("keydown", e => {
+  if (e.key === "p" || e.key === "Escape") togglePause();
+  if (e.key === "ArrowUp" && dir !== "down") dir = "up";
+  if (e.key === "ArrowDown" && dir !== "up") dir = "down";
+  if (e.key === "ArrowLeft" && dir !== "right") dir = "left";
+  if (e.key === "ArrowRight" && dir !== "left") dir = "right";
 });
 
-/* ===== SWIPE MOVIL ===== */
-let startX,startY;
-document.addEventListener("touchstart",e=>{
-  startX=e.touches[0].clientX;
-  startY=e.touches[0].clientY;
+/* ===== CELULAR: DESLIZAR ===== */
+let touchStartX = 0, touchStartY = 0;
+document.addEventListener("touchstart", e => {
+  touchStartX = e.changedTouches[0].screenX;
+  touchStartY = e.changedTouches[0].screenY;
 });
 
-document.addEventListener("touchend",e=>{
-  let dx=e.changedTouches[0].clientX-startX;
-  let dy=e.changedTouches[0].clientY-startY;
+document.addEventListener("touchend", e => {
+  let dx = e.changedTouches[0].screenX - touchStartX;
+  let dy = e.changedTouches[0].screenY - touchStartY;
 
-  if(Math.abs(dx)>Math.abs(dy)){
-    if(dx>30&&dir!=="left")dir="right";
-    if(dx<-30&&dir!=="right")dir="left";
-  }else{
-    if(dy>30&&dir!=="up")dir="down";
-    if(dy<-30&&dir!=="down")dir="up";
+  if (Math.abs(dx) > Math.abs(dy)) {
+    if (dx > 0 && dir !== "left") dir = "right";
+    else if (dx < 0 && dir !== "right") dir = "left";
+  } else {
+    if (dy > 0 && dir !== "up") dir = "down";
+    else if (dy < 0 && dir !== "down") dir = "up";
   }
 });
+
+/* ===== TIENDAS (BASE LISTA PARA EXPANDIR) ===== */
+function openSkins() {
+  document.getElementById("menu").classList.add("hidden");
+  document.getElementById("shopSkins").classList.remove("hidden");
+}
+
+function openBoards() {
+  document.getElementById("menu").classList.add("hidden");
+  document.getElementById("shopBoards").classList.remove("hidden");
+}
+
+function backMenu() {
+  location.reload();
+}
 </script>
 
 </body>
