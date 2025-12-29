@@ -2,68 +2,47 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<title>Snake</title>
+<title>Snake Game</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <style>
 body{
   margin:0;
-  font-family:Arial,sans-serif;
+  font-family:Arial;
   background:#111;
   color:white;
   text-align:center;
 }
-.hidden{display:none}
-
-#menu{
-  max-width:400px;
-  margin:auto;
-  padding:10px;
-}
 
 button,select{
   padding:10px;
-  font-size:16px;
   margin:5px;
+  font-size:16px;
+  cursor:pointer;
 }
 
-#board{
-  width:400px;
-  height:400px;
-  background:black;
+#menu,#shopSkins,#shopBoards{
+  display:none;
+}
+
+#game{
+  display:none;
+}
+
+canvas{
+  background:#000;
   margin:auto;
-  position:relative;
+  display:block;
 }
 
-.snake{
-  width:20px;
-  height:20px;
-  position:absolute;
-  background-size:cover;
-}
-
-.food{
-  width:20px;
-  height:20px;
-  position:absolute;
-  background-image:url("apple.png");
-  background-size:cover;
-}
-
-#pauseScreen{
-  position:fixed;
-  inset:0;
-  background:rgba(0,0,0,.8);
-}
-
-#shopSkins{
+.shop{
   background:white;
   color:black;
   padding:10px;
 }
 
-.shop-item{
-  border:1px solid #ccc;
+.item{
+  border:1px solid #000;
   margin:5px;
   padding:5px;
 }
@@ -72,246 +51,223 @@ button,select{
 
 <body>
 
-<div id="menu">
-  <h2>🐍 Snake</h2>
-  <p id="info"></p>
+<h1>🐍 Snake</h1>
 
+<div id="menu">
   <select id="mode">
-    <option value="easy">Fácil</option>
-    <option value="normal">Normal</option>
-    <option value="hard">Difícil</option>
-    <option value="extreme">Extremo 🔥</option>
+    <option value="normal">Modo Normal</option>
+    <option value="extremo">Modo Extremo</option>
   </select><br>
 
-  <button onclick="startGame()">Jugar</button>
-  <button onclick="openSkins()">Tienda Skins</button>
+  <button onclick="startGame()">▶ Jugar</button><br>
+  <button onclick="openShop('skins')">🎨 Tienda Skins</button>
+  <button onclick="openShop('boards')">🟦 Tienda Tableros</button>
 </div>
 
-<div id="game" class="hidden">
-  <p>Puntaje: <span id="score">0</span></p>
-  <div id="board"></div>
+<div id="game">
+  <p>Puntaje: <span id="score">0</span> | Monedas: <span id="coins">0</span></p>
+  <button onclick="pauseGame()">⏸ Pausa</button>
+  <canvas id="canvas" width="400" height="400"></canvas>
+  <br>
+  <button onclick="backMenu()">⬅ Menú</button>
 </div>
 
-<div id="pauseScreen" class="hidden">
-  <h2>⏸️ Pausa</h2>
-  <button onclick="togglePause()">Reanudar</button>
+<div id="shopSkins" class="shop">
+  <h2>🎨 Skins</h2>
+  <div id="skins"></div>
+  <button onclick="backMenu()">⬅ Volver</button>
 </div>
 
-<div id="shopSkins" class="hidden">
-  <h2>Tienda de Skins</h2>
-  <div id="skinsList"></div>
-  <button onclick="backMenu()">Volver</button>
+<div id="shopBoards" class="shop">
+  <h2>🟦 Tableros</h2>
+  <div id="boards"></div>
+  <button onclick="backMenu()">⬅ Volver</button>
 </div>
 
 <script>
-// ===== DATOS =====
-const speeds={easy:250,normal:170,hard:120,extreme:90};
-const reward={easy:1,normal:2,hard:3,extreme:5};
-const specialSkin={
-  easy:"lime",
-  normal:"deepskyblue",
-  hard:"red",
-  extreme:"gold"
-};
+const canvas=document.getElementById("canvas");
+const ctx=canvas.getContext("2d");
 
-let player=localStorage.getItem("player");
-if(!player){
-  player=prompt("Tu nombre:");
-  localStorage.setItem("player",player);
-}
+let box=20;
+let snake,food,dir,score,coins,interval,paused=false;
+coins=parseInt(localStorage.getItem("coins"))||0;
 
-let best=+localStorage.getItem("best")||0;
-let coins=+localStorage.getItem("coins")||0;
+document.getElementById("coins").innerText=coins;
 
-document.getElementById("info").innerText=
-`👤 ${player} | 🏆 ${best} | 💰 ${coins}`;
-
-// ===== SKINS =====
 const skins=[
  {name:"Verde",color:"lime",price:0},
- {name:"Azul",color:"blue",price:10},
- {name:"Roja",color:"red",price:20},
- {name:"Amarilla",color:"yellow",price:30},
- {name:"Morada",color:"purple",price:40},
- {name:"Cian",color:"cyan",price:50},
- {name:"Naranja",color:"orange",price:60},
- {name:"Rosa",color:"hotpink",price:70},
- {name:"Blanca",color:"white",price:80},
- {name:"Negra",color:"gray",price:100}
+ {name:"Rojo",color:"red",price:10},
+ {name:"Azul",color:"blue",price:20},
+ {name:"Amarillo",color:"yellow",price:30},
+ {name:"Rosa",color:"pink",price:40},
+ {name:"Morado",color:"purple",price:50},
+ {name:"Cian",color:"cyan",price:60},
+ {name:"Naranja",color:"orange",price:70},
+ {name:"Blanco",color:"white",price:80},
+ {name:"Dorado",color:"gold",price:100}
 ];
 
-let owned=JSON.parse(localStorage.getItem("owned"))||[0];
-let selected=+localStorage.getItem("skin")||0;
+const boards=[
+ {name:"Negro",color:"#000",price:0},
+ {name:"Gris",color:"#333",price:10},
+ {name:"Azul oscuro",color:"#001f3f",price:20},
+ {name:"Verde oscuro",color:"#013220",price:30},
+ {name:"Morado",color:"#2e003e",price:40},
+ {name:"Azul marino",color:"#000814",price:50},
+ {name:"Verde bosque",color:"#0b3d2e",price:60},
+ {name:"Rojo vino",color:"#3a0000",price:70},
+ {name:"Marrón",color:"#3e2723",price:80},
+ {name:"Celeste",color:"#87ceeb",price:90},
+ {name:"Arena",color:"#c2b280",price:100},
+ {name:"Rosa pastel",color:"#ffd1dc",price:120}
+];
 
-// ===== JUEGO =====
-let snake,food,dir,loop,score=0,paused=false,mode;
-const board=document.getElementById("board");
+let skin=localStorage.getItem("skin")||"lime";
+let board=localStorage.getItem("board")||"#000";
 
 function startGame(){
-  mode=document.getElementById("mode").value;
-  document.getElementById("menu").classList.add("hidden");
-  document.getElementById("game").classList.remove("hidden");
+ document.getElementById("menu").style.display="none";
+ document.getElementById("game").style.display="block";
 
-  snake=[{x:200,y:200}];
-  dir="right";
-  score=0;
-  document.getElementById("score").innerText=0;
-  spawnFood();
-  clearInterval(loop);
-  loop=setInterval(update,speeds[mode]);
-}
+ snake=[{x:200,y:200}];
+ dir="RIGHT";
+ score=0;
+ paused=false;
 
-function spawnFood(){
-  food={
-    x:Math.floor(Math.random()*20)*20,
-    y:Math.floor(Math.random()*20)*20
-  };
-}
+ food={
+  x:Math.floor(Math.random()*20)*box,
+  y:Math.floor(Math.random()*20)*box
+ };
 
-function update(){
-  if(paused)return;
-  let h={...snake[0]};
-  if(dir==="up")h.y-=20;
-  if(dir==="down")h.y+=20;
-  if(dir==="left")h.x-=20;
-  if(dir==="right")h.x+=20;
+ let speed=document.getElementById("mode").value==="extremo"?100:170;
+ if(document.getElementById("mode").value==="extremo") coins+=5;
 
-  if(h.x<0||h.y<0||h.x>=400||h.y>=400){
-    endGame(); return;
-  }
-
-  snake.unshift(h);
-
-  if(h.x===food.x&&h.y===food.y){
-    score++;
-    document.getElementById("score").innerText=score;
-    spawnFood();
-  }else snake.pop();
-
-  draw();
+ interval=setInterval(draw,speed);
 }
 
 function draw(){
-  board.innerHTML="";
-  snake.forEach(s=>{
-    const d=document.createElement("div");
-    d.className="snake";
-    d.style.left=s.x+"px";
-    d.style.top=s.y+"px";
+ if(paused) return;
+ ctx.fillStyle=board;
+ ctx.fillRect(0,0,400,400);
 
-    // SKIN ESPECIAL POR MODO
-    if(mode in specialSkin){
-      d.style.background=specialSkin[mode];
-    }else{
-      d.style.background=skins[selected].color;
-    }
+ snake.forEach(p=>{
+  ctx.fillStyle=skin;
+  ctx.fillRect(p.x,p.y,box,box);
+ });
 
-    board.appendChild(d);
-  });
+ ctx.fillStyle="red";
+ ctx.fillRect(food.x,food.y,box,box);
 
-  const f=document.createElement("div");
-  f.className="food";
-  f.style.left=food.x+"px";
-  f.style.top=food.y+"px";
-  board.appendChild(f);
-}
+ let head={x:snake[0].x,y:snake[0].y};
+ if(dir==="LEFT") head.x-=box;
+ if(dir==="RIGHT") head.x+=box;
+ if(dir==="UP") head.y-=box;
+ if(dir==="DOWN") head.y+=box;
 
-function endGame(){
-  clearInterval(loop);
-  coins+=reward[mode];
+ if(head.x<0||head.x>=400||head.y<0||head.y>=400){
+  clearInterval(interval);
   localStorage.setItem("coins",coins);
+  alert("Perdiste 😢");
+  backMenu();
+  return;
+ }
 
-  if(score>best){
-    best=score;
-    localStorage.setItem("best",best);
-  }
-  alert("Perdiste");
-  location.reload();
-}
+ if(head.x===food.x&&head.y===food.y){
+  score++;
+  coins++;
+  document.getElementById("score").innerText=score;
+  document.getElementById("coins").innerText=coins;
+  food={
+   x:Math.floor(Math.random()*20)*box,
+   y:Math.floor(Math.random()*20)*box
+  };
+ }else{
+  snake.pop();
+ }
 
-// ===== PAUSA =====
-function togglePause(){
-  paused=!paused;
-  document.getElementById("pauseScreen").classList.toggle("hidden");
+ snake.unshift(head);
 }
 
 document.addEventListener("keydown",e=>{
-  if(e.key==="p"||e.key==="Escape")togglePause();
-  if(e.key==="ArrowUp"&&dir!=="down")dir="up";
-  if(e.key==="ArrowDown"&&dir!=="up")dir="down";
-  if(e.key==="ArrowLeft"&&dir!=="right")dir="left";
-  if(e.key==="ArrowRight"&&dir!=="left")dir="right";
+ if(e.key==="ArrowLeft")dir="LEFT";
+ if(e.key==="ArrowRight")dir="RIGHT";
+ if(e.key==="ArrowUp")dir="UP";
+ if(e.key==="ArrowDown")dir="DOWN";
 });
 
-// ===== CELULAR =====
-let sx,sy;
-document.addEventListener("touchstart",e=>{
-  sx=e.touches[0].clientX;
-  sy=e.touches[0].clientY;
+let xStart,yStart;
+canvas.addEventListener("touchstart",e=>{
+ xStart=e.touches[0].clientX;
+ yStart=e.touches[0].clientY;
 });
-document.addEventListener("touchend",e=>{
-  let dx=e.changedTouches[0].clientX-sx;
-  let dy=e.changedTouches[0].clientY-sy;
-  if(Math.abs(dx)>Math.abs(dy)){
-    if(dx>0&&dir!=="left")dir="right";
-    if(dx<0&&dir!=="right")dir="left";
-  }else{
-    if(dy>0&&dir!=="up")dir="down";
-    if(dy<0&&dir!=="down")dir="up";
-  }
+canvas.addEventListener("touchend",e=>{
+ let xEnd=e.changedTouches[0].clientX;
+ let yEnd=e.changedTouches[0].clientY;
+ let dx=xEnd-xStart;
+ let dy=yEnd-yStart;
+ if(Math.abs(dx)>Math.abs(dy)){
+  if(dx>0)dir="RIGHT"; else dir="LEFT";
+ }else{
+  if(dy>0)dir="DOWN"; else dir="UP";
+ }
 });
 
-// ===== TIENDA =====
-function openSkins(){
-  document.getElementById("menu").classList.add("hidden");
-  document.getElementById("shopSkins").classList.remove("hidden");
-  renderSkins();
+function pauseGame(){paused=!paused;}
+
+function backMenu(){
+ clearInterval(interval);
+ document.getElementById("game").style.display="none";
+ document.getElementById("shopSkins").style.display="none";
+ document.getElementById("shopBoards").style.display="none";
+ document.getElementById("menu").style.display="block";
 }
 
-function renderSkins(){
-  const list=document.getElementById("skinsList");
-  list.innerHTML="";
-  skins.forEach((s,i)=>{
-    const d=document.createElement("div");
-    d.className="shop-item";
-    d.innerHTML=`<b>${s.name}</b><br>${s.price} monedas<br>`;
-    const b=document.createElement("button");
-
-    if(owned.includes(i)){
-      b.innerText=i===selected?"Usada":"Usar";
-      b.onclick=()=>{
-        selected=i;
-        localStorage.setItem("skin",selected);
-        renderSkins();
-      };
-    }else{
-      b.innerText="Comprar";
-      b.onclick=()=>{
-        if(coins>=s.price){
-          coins-=s.price;
-          owned.push(i);
-          localStorage.setItem("coins",coins);
-          localStorage.setItem("owned",JSON.stringify(owned));
-          renderSkins();
-        }else alert("No tienes monedas");
-      };
-    }
-    d.appendChild(b);
-    list.appendChild(d);
+function openShop(type){
+ document.getElementById("menu").style.display="none";
+ if(type==="skins"){
+  let s=document.getElementById("skins");
+  s.innerHTML="";
+  skins.forEach(i=>{
+   s.innerHTML+=`<div class="item" style="background:${i.color}">
+   ${i.name} - ${i.price} 🪙
+   <button onclick="buySkin('${i.color}',${i.price})">Comprar</button></div>`;
   });
-
-  // Skins especiales
-  list.innerHTML+=`
-  <hr>
-  <b>Skins especiales por modo</b><br>
-  🟢 Fácil<br>🔵 Normal<br>🔴 Difícil<br>🔥 Extremo
-  `;
+  document.getElementById("shopSkins").style.display="block";
+ }else{
+  let b=document.getElementById("boards");
+  b.innerHTML="";
+  boards.forEach(i=>{
+   b.innerHTML+=`<div class="item" style="background:${i.color}">
+   ${i.name} - ${i.price} 🪙
+   <button onclick="buyBoard('${i.color}',${i.price})">Comprar</button></div>`;
+  });
+  document.getElementById("shopBoards").style.display="block";
+ }
 }
 
-function backMenu(){ location.reload(); }
+function buySkin(c,p){
+ if(coins>=p){
+  coins-=p;
+  skin=c;
+  localStorage.setItem("skin",c);
+  document.getElementById("coins").innerText=coins;
+ }
+}
+
+function buyBoard(c,p){
+ if(coins>=p){
+  coins-=p;
+  board=c;
+  localStorage.setItem("board",c);
+  document.getElementById("coins").innerText=coins;
+ }
+}
+
+document.getElementById("menu").style.display="block";
 </script>
 
 </body>
 </html>
+
 
 
