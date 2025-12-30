@@ -323,7 +323,8 @@ function draw(){
   if(dir==="UP") head.y -= box;
   if(dir==="DOWN") head.y += box;
 
-  if(head.x < 0 || head.y < 0 || head.x + box > canvas.width || head.y + box > canvas.height ||
+  // Colisión precisa en la cuadrícula
+  if(head.x < 0 || head.y < 0 || head.x >= canvas.width || head.y >= canvas.height ||
      snake.some(s=>s.x===head.x && s.y===head.y)){
     clearInterval(interval);
     alert("Perdiste 😢");
@@ -385,4 +386,3 @@ document.getElementById("arrowRight").addEventListener("click", ()=>{ if(dir!=="
 </script>
 </body>
 </html>
-
