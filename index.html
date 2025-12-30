@@ -59,25 +59,35 @@ canvas {
 #mobileControls {
   display: none;
   position: fixed;
-  bottom: 15px;
+  bottom: 20px;
   left: 50%;
   transform: translateX(-50%);
   z-index: 1000;
   user-select: none;
+  pointer-events: none; /* evita que interfiera fuera del juego */
 }
 #mobileControls button {
-  width: 50px;
-  height: 50px;
+  width: 60px;  /* más grande */
+  height: 60px;
   margin: 5px;
-  font-size: 24px;
+  font-size: 28px;
   border-radius: 50%;
+  pointer-events: auto;
 }
-#arrowUp { position: relative; left: 55px; }
-#arrowLeft { position: relative; bottom: 55px; left: 0px; }
-#arrowDown { position: relative; bottom: 55px; left: 55px; }
-#arrowRight { position: relative; bottom: 55px; left: 110px; }
-@media (max-width: 768px) {
-  #mobileControls { display: block; }
+#arrowUp { grid-area: up; }
+#arrowLeft { grid-area: left; }
+#arrowDown { grid-area: down; }
+#arrowRight { grid-area: right; }
+
+/* Usamos grid para ordenar como teclado de PC */
+#mobileControlsGrid {
+  display: grid;
+  grid-template-areas:
+    ". up ."
+    "left down right";
+  grid-gap: 10px;
+  justify-items: center;
+  align-items: center;
 }
 </style>
 </head>
@@ -127,10 +137,12 @@ canvas {
 
 <!-- CONTROLES MÓVIL -->
 <div id="mobileControls">
-  <button id="arrowUp">↑</button>
-  <button id="arrowLeft">←</button>
-  <button id="arrowDown">↓</button>
-  <button id="arrowRight">→</button>
+  <div id="mobileControlsGrid">
+    <button id="arrowUp">↑</button>
+    <button id="arrowLeft">←</button>
+    <button id="arrowDown">↓</button>
+    <button id="arrowRight">→</button>
+  </div>
 </div>
 
 <script>
@@ -138,6 +150,7 @@ const canvas = document.getElementById("canvas");
 const ctx = canvas.getContext("2d");
 const scoreEl = document.getElementById("score");
 const box = 20;
+const mobileControls = document.getElementById("mobileControls");
 
 let snake, food, dir, score, speed, coinsPerApple, interval;
 
@@ -188,6 +201,7 @@ updateUI();
 
 function hideAll(){
   menu.style.display = modes.style.display = shop.style.display = game.style.display = "none";
+  mobileControls.style.display = "none"; // ocultamos siempre fuera del juego
 }
 function backMenu(){
   hideAll();
@@ -268,6 +282,7 @@ window.addEventListener("resize", resizeCanvas);
 function startGame(){
   hideAll();
   game.style.display = "block";
+  mobileControls.style.display = "block"; // mostramos solo al entrar al juego
   resizeCanvas();
 
   snake = [{x:5*box, y:5*box}];
@@ -309,6 +324,17 @@ function draw(){
   if(dir==="UP") head.y -= box;
   if(dir==="DOWN") head.y += box;
 
+  // Bordes exactos
+  let cols = canvas.width / box;
+  let rows = canvas.height / box;
+  if(head.x < 0 || head.y < 0 || head.x >= cols*box || head.y >= rows*box ||
+     snake.some(s=>s.x===head.x && s.y===head.y)){
+    clearInterval(interval);
+    alert("Perdiste 😢");
+    backMenu();
+    return;
+  }
+
   if(head.x===food.x && head.y===food.y){
     score++;
     coins += coinsPerApple;
@@ -321,13 +347,6 @@ function draw(){
     food = spawnFood();
   } else snake.pop();
 
-  if(head.x<0 || head.y<0 || head.x>=canvas.width || head.y>=canvas.height ||
-     snake.some(s=>s.x===head.x && s.y===head.y)){
-    clearInterval(interval);
-    alert("Perdiste 😢");
-    backMenu();
-    return;
-  }
   snake.unshift(head);
 }
 
@@ -361,13 +380,12 @@ canvas.addEventListener("touchmove", e=>{
   touchStartY = e.touches[0].clientY;
 }, {passive:false});
 
-// ✅ Controles flechas en pantalla
+// Controles flechas en pantalla móvil
 document.getElementById("arrowUp").addEventListener("click", ()=>{ if(dir!=="DOWN") dir="UP"; });
 document.getElementById("arrowDown").addEventListener("click", ()=>{ if(dir!=="UP") dir="DOWN"; });
 document.getElementById("arrowLeft").addEventListener("click", ()=>{ if(dir!=="RIGHT") dir="LEFT"; });
 document.getElementById("arrowRight").addEventListener("click", ()=>{ if(dir!=="LEFT") dir="RIGHT"; });
 
 </script>
-
 </body>
 </html>
