@@ -26,9 +26,6 @@ canvas {
   background: #000;
   display: block;
   margin: 15px auto;
-  width: 90vw;
-  max-width: 400px;
-  aspect-ratio: 1/1;
   border: 3px solid #555;
   touch-action: none;
 }
@@ -118,7 +115,6 @@ let ownedBoards=JSON.parse(localStorage.getItem("ownedBoards"))||[0];
 let skinEquipped=+localStorage.getItem("skinEquipped")||0;
 let boardEquipped=+localStorage.getItem("boardEquipped")||0;
 
-/* NUEVAS SKINS Y TABLEROS MEJORADOS */
 const skins=[
  {name:"Gris Claro",color:"#b0b0b0",price:25},
  {name:"Marrón",color:"#8b4513",price:30},
@@ -129,7 +125,7 @@ const skins=[
  {name:"Rosa Chicle",color:"#ff69b4",price:55},
  {name:"Amarillo",color:"#ffd700",price:60},
  {name:"Cian Neón",color:"#00ffff",price:65},
- {name:"Naranja",color:"#ff8c00",price:70},
+ {name:"Naranja Brillante",color:"#ff8c00",price:70},
  {name:"Blanco",color:"#ffffff",price:80},
  {name:"Dorado",color:"#daa520",price:100},
  {name:"Arcoíris",color:"rainbow",price:150}
@@ -156,7 +152,6 @@ function updateUI(){
 }
 updateUI();
 
-/* MENÚ */
 function hideAll(){
   menu.style.display=modes.style.display=shop.style.display=game.style.display="none";
 }
@@ -170,7 +165,6 @@ function showModes(){
   modes.style.display="block";
 }
 
-/* MODOS */
 function setMode(m){
   if(m==="facil"){speed=200;coinsPerApple=1;}
   if(m==="normal"){speed=170;coinsPerApple=2;}
@@ -179,7 +173,6 @@ function setMode(m){
   startGame();
 }
 
-/* TIENDAS */
 function openShop(type){
   hideAll();
   shop.style.display="block";
@@ -230,14 +223,14 @@ function openShop(type){
   });
 }
 
-/* RESIZE CANVAS */
 function resizeCanvas(){
-  let size = Math.min(window.innerWidth*0.9, 400);
-  canvas.width=Math.floor(size/box)*box;
-  canvas.height=canvas.width;
+  let size = Math.min(window.innerWidth*0.9, window.innerHeight*0.7);
+  size = Math.floor(size/box)*box;
+  canvas.width = size;
+  canvas.height = size;
 }
+window.addEventListener("resize", resizeCanvas);
 
-/* JUEGO */
 function startGame(){
   hideAll();
   game.style.display="block";
@@ -298,7 +291,6 @@ function draw(){
   snake.unshift(head);
 }
 
-/* CONTROLES TECLADO */
 document.addEventListener("keydown",e=>{
   if(e.key==="ArrowLeft"&&dir!=="RIGHT")dir="LEFT";
   if(e.key==="ArrowRight"&&dir!=="LEFT")dir="RIGHT";
@@ -306,7 +298,6 @@ document.addEventListener("keydown",e=>{
   if(e.key==="ArrowDown"&&dir!=="UP")dir="DOWN";
 });
 
-/* SWIPE CELULAR */
 let touchStartX=0, touchStartY=0;
 canvas.addEventListener("touchstart", e=>{
   touchStartX=e.touches[0].clientX;
@@ -331,4 +322,5 @@ canvas.addEventListener("touchmove", e=>{
 
 </body>
 </html>
+
 
