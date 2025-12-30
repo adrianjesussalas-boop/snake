@@ -101,21 +101,22 @@ canvas {
 </div>
 
 <script>
-const canvas=document.getElementById("canvas");
-const ctx=canvas.getContext("2d");
-const box=20;
+const canvas = document.getElementById("canvas");
+const ctx = canvas.getContext("2d");
+const scoreEl = document.getElementById("score"); // ✅ Definido correctamente
+const box = 20;
 
-let snake,food,dir,score,speed,coinsPerApple,interval;
+let snake, food, dir, score, speed, coinsPerApple, interval;
 
-let coins=+localStorage.getItem("coins")||0;
-let bestScore=+localStorage.getItem("bestScore")||0;
+let coins = +localStorage.getItem("coins") || 0;
+let bestScore = +localStorage.getItem("bestScore") || 0;
 
-let ownedSkins=JSON.parse(localStorage.getItem("ownedSkins"))||[0];
-let ownedBoards=JSON.parse(localStorage.getItem("ownedBoards"))||[0];
-let skinEquipped=+localStorage.getItem("skinEquipped")||0;
-let boardEquipped=+localStorage.getItem("boardEquipped")||0;
+let ownedSkins = JSON.parse(localStorage.getItem("ownedSkins")) || [0];
+let ownedBoards = JSON.parse(localStorage.getItem("ownedBoards")) || [0];
+let skinEquipped = +localStorage.getItem("skinEquipped") || 0;
+let boardEquipped = +localStorage.getItem("boardEquipped") || 0;
 
-const skins=[
+const skins = [
  {name:"Gris Claro",color:"#b0b0b0",price:25},
  {name:"Marrón",color:"#8b4513",price:30},
  {name:"Verde Oliva",color:"#556b2f",price:35},
@@ -131,7 +132,7 @@ const skins=[
  {name:"Arcoíris",color:"rainbow",price:150}
 ];
 
-const boards=[
+const boards = [
  {name:"Negro Clásico",color:"#000",price:25},
  {name:"Gris Suave",color:"#404040",price:30},
  {name:"Azul Noche",color:"#000033",price:35},
@@ -147,60 +148,60 @@ const boards=[
 ];
 
 function updateUI(){
-  document.getElementById("coins").textContent=coins;
-  document.getElementById("bestScore").textContent=bestScore;
+  document.getElementById("coins").textContent = coins;
+  document.getElementById("bestScore").textContent = bestScore;
 }
 updateUI();
 
 function hideAll(){
-  menu.style.display=modes.style.display=shop.style.display=game.style.display="none";
+  menu.style.display = modes.style.display = shop.style.display = game.style.display = "none";
 }
 function backMenu(){
   hideAll();
-  menu.style.display="block";
+  menu.style.display = "block";
   updateUI();
 }
 function showModes(){
   hideAll();
-  modes.style.display="block";
+  modes.style.display = "block";
 }
 
 function setMode(m){
-  if(m==="facil"){speed=200;coinsPerApple=1;}
-  if(m==="normal"){speed=170;coinsPerApple=2;}
-  if(m==="dificil"){speed=120;coinsPerApple=3;}
-  if(m==="extremo"){speed=80;coinsPerApple=4;}
+  if(m==="facil"){speed=200; coinsPerApple=1;}
+  if(m==="normal"){speed=170; coinsPerApple=2;}
+  if(m==="dificil"){speed=120; coinsPerApple=3;}
+  if(m==="extremo"){speed=80; coinsPerApple=4;}
   startGame();
 }
 
 function openShop(type){
   hideAll();
-  shop.style.display="block";
-  shopItems.innerHTML="";
-  shopTitle.textContent= type==="snake" ? "🐍 Skins" : "🟩 Tableros";
+  shop.style.display = "block";
+  shopItems.innerHTML = "";
+  shopTitle.textContent = type==="snake" ? "🐍 Skins" : "🟩 Tableros";
 
   let list = type==="snake" ? skins : boards;
-  let owned= type==="snake" ? ownedSkins : ownedBoards;
+  let owned = type==="snake" ? ownedSkins : ownedBoards;
   let equipped = type==="snake" ? skinEquipped : boardEquipped;
 
   list.forEach((item,i)=>{
-    let div=document.createElement("div");
-    div.className="item"+(equipped===i?" equipped":"");
-    div.innerHTML=`<div style="height:30px;background:${item.color}"></div>
+    let div = document.createElement("div");
+    div.className = "item" + (equipped===i ? " equipped" : "");
+    div.innerHTML = `<div style="height:30px;background:${item.color}"></div>
       <p>${item.name}</p>
       <p>Precio: ${item.price} 🪙</p>`;
 
-    let btn=document.createElement("button");
+    let btn = document.createElement("button");
 
     if(owned.includes(i)){
       btn.textContent = equipped===i ? "Desequipar" : "Equipar";
       btn.onclick = ()=>{
         if(type==="snake"){
-          skinEquipped = equipped===i?0:i;
-          localStorage.setItem("skinEquipped",skinEquipped);
+          skinEquipped = equipped===i ? 0 : i;
+          localStorage.setItem("skinEquipped", skinEquipped);
         }else{
-          boardEquipped = equipped===i?0:i;
-          localStorage.setItem("boardEquipped",boardEquipped);
+          boardEquipped = equipped===i ? 0 : i;
+          localStorage.setItem("boardEquipped", boardEquipped);
         }
         openShop(type);
       };
@@ -211,7 +212,7 @@ function openShop(type){
           coins -= item.price;
           owned.push(i);
           localStorage.setItem("coins",coins);
-          localStorage.setItem(type==="snake"?"ownedSkins":"ownedBoards",JSON.stringify(owned));
+          localStorage.setItem(type==="snake"?"ownedSkins":"ownedBoards", JSON.stringify(owned));
           openShop(type);
         } else {
           alert("No tienes suficientes monedas 🪙");
@@ -233,55 +234,55 @@ window.addEventListener("resize", resizeCanvas);
 
 function startGame(){
   hideAll();
-  game.style.display="block";
+  game.style.display = "block";
   resizeCanvas();
 
-  snake=[{x:5*box,y:5*box}];
-  food=spawnFood();
-  dir="RIGHT";
-  score=0;
-  scoreEl.textContent=`Puntos: ${score} | 🪙 ${coins} | 🏆 ${bestScore}`;
+  snake = [{x:5*box, y:5*box}];
+  food = spawnFood();
+  dir = "RIGHT";
+  score = 0;
+  scoreEl.textContent = `Puntos: ${score} | 🪙 ${coins} | 🏆 ${bestScore}`;
   clearInterval(interval);
-  interval=setInterval(draw,speed);
+  interval = setInterval(draw, speed);
 }
 
 function spawnFood(){
-  let cols=canvas.width/box;
-  let rows=canvas.height/box;
-  return {x:Math.floor(Math.random()*cols)*box, y:Math.floor(Math.random()*rows)*box};
+  let cols = canvas.width / box;
+  let rows = canvas.height / box;
+  return {x: Math.floor(Math.random()*cols)*box, y: Math.floor(Math.random()*rows)*box};
 }
 
 function draw(){
-  ctx.fillStyle=boards[boardEquipped].color;
+  ctx.fillStyle = boards[boardEquipped].color;
   ctx.fillRect(0,0,canvas.width,canvas.height);
 
-  snake.forEach((s)=>{ 
-    ctx.fillStyle=skins[skinEquipped].color;
-    ctx.fillRect(s.x,s.y,box,box);
+  snake.forEach((s)=>{
+    ctx.fillStyle = skins[skinEquipped].color;
+    ctx.fillRect(s.x, s.y, box, box);
   });
 
-  ctx.fillStyle="red";
-  ctx.fillRect(food.x,food.y,box,box);
+  ctx.fillStyle = "red";
+  ctx.fillRect(food.x, food.y, box, box);
 
-  let head={...snake[0]};
-  if(dir==="LEFT")head.x-=box;
-  if(dir==="RIGHT")head.x+=box;
-  if(dir==="UP")head.y-=box;
-  if(dir==="DOWN")head.y+=box;
+  let head = {...snake[0]};
+  if(dir==="LEFT") head.x -= box;
+  if(dir==="RIGHT") head.x += box;
+  if(dir==="UP") head.y -= box;
+  if(dir==="DOWN") head.y += box;
 
   if(head.x===food.x && head.y===food.y){
     score++;
-    coins+=coinsPerApple;
+    coins += coinsPerApple;
     if(score>bestScore){
-      bestScore=score;
-      localStorage.setItem("bestScore",bestScore);
+      bestScore = score;
+      localStorage.setItem("bestScore", bestScore);
     }
-    localStorage.setItem("coins",coins);
-    scoreEl.textContent=`Puntos: ${score} | 🪙 ${coins} | 🏆 ${bestScore}`;
-    food=spawnFood();
-  }else snake.pop();
+    localStorage.setItem("coins", coins);
+    scoreEl.textContent = `Puntos: ${score} | 🪙 ${coins} | 🏆 ${bestScore}`;
+    food = spawnFood();
+  } else snake.pop();
 
-  if(head.x<0||head.y<0||head.x>=canvas.width||head.y>=canvas.height||
+  if(head.x<0 || head.y<0 || head.x>=canvas.width || head.y>=canvas.height ||
      snake.some(s=>s.x===head.x && s.y===head.y)){
     clearInterval(interval);
     alert("Perdiste 😢");
@@ -291,11 +292,11 @@ function draw(){
   snake.unshift(head);
 }
 
-document.addEventListener("keydown",e=>{
-  if(e.key==="ArrowLeft"&&dir!=="RIGHT")dir="LEFT";
-  if(e.key==="ArrowRight"&&dir!=="LEFT")dir="RIGHT";
-  if(e.key==="ArrowUp"&&dir!=="DOWN")dir="UP";
-  if(e.key==="ArrowDown"&&dir!=="UP")dir="DOWN";
+document.addEventListener("keydown", e=>{
+  if(e.key==="ArrowLeft" && dir!=="RIGHT") dir="LEFT";
+  if(e.key==="ArrowRight" && dir!=="LEFT") dir="RIGHT";
+  if(e.key==="ArrowUp" && dir!=="DOWN") dir="UP";
+  if(e.key==="ArrowDown" && dir!=="UP") dir="DOWN";
 });
 
 let touchStartX=0, touchStartY=0;
@@ -306,21 +307,20 @@ canvas.addEventListener("touchstart", e=>{
 
 canvas.addEventListener("touchmove", e=>{
   e.preventDefault();
-  let dx=e.touches[0].clientX-touchStartX;
-  let dy=e.touches[0].clientY-touchStartY;
+  let dx=e.touches[0].clientX - touchStartX;
+  let dy=e.touches[0].clientY - touchStartY;
   if(Math.abs(dx)>Math.abs(dy)){
-    if(dx>0 && dir!=="LEFT")dir="RIGHT";
-    if(dx<0 && dir!=="RIGHT")dir="LEFT";
-  }else{
-    if(dy>0 && dir!=="UP")dir="DOWN";
-    if(dy<0 && dir!=="DOWN")dir="UP";
+    if(dx>0 && dir!=="LEFT") dir="RIGHT";
+    if(dx<0 && dir!=="RIGHT") dir="LEFT";
+  } else {
+    if(dy>0 && dir!=="UP") dir="DOWN";
+    if(dy<0 && dir!=="DOWN") dir="UP";
   }
-  touchStartX=e.touches[0].clientX;
-  touchStartY=e.touches[0].clientY;
+  touchStartX = e.touches[0].clientX;
+  touchStartY = e.touches[0].clientY;
 }, {passive:false});
 </script>
 
 </body>
 </html>
-
 
