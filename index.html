@@ -54,6 +54,31 @@ canvas {
 .mode-card button {
   width: 100%;
 }
+
+/* Controles en pantalla para móvil */
+#mobileControls {
+  display: none;
+  position: fixed;
+  bottom: 15px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 1000;
+  user-select: none;
+}
+#mobileControls button {
+  width: 50px;
+  height: 50px;
+  margin: 5px;
+  font-size: 24px;
+  border-radius: 50%;
+}
+#arrowUp { position: relative; left: 55px; }
+#arrowLeft { position: relative; bottom: 55px; left: 0px; }
+#arrowDown { position: relative; bottom: 55px; left: 55px; }
+#arrowRight { position: relative; bottom: 55px; left: 110px; }
+@media (max-width: 768px) {
+  #mobileControls { display: block; }
+}
 </style>
 </head>
 
@@ -100,10 +125,18 @@ canvas {
   <canvas id="canvas"></canvas>
 </div>
 
+<!-- CONTROLES MÓVIL -->
+<div id="mobileControls">
+  <button id="arrowUp">↑</button>
+  <button id="arrowLeft">←</button>
+  <button id="arrowDown">↓</button>
+  <button id="arrowRight">→</button>
+</div>
+
 <script>
 const canvas = document.getElementById("canvas");
 const ctx = canvas.getContext("2d");
-const scoreEl = document.getElementById("score"); // ✅ Definido correctamente
+const scoreEl = document.getElementById("score");
 const box = 20;
 
 let snake, food, dir, score, speed, coinsPerApple, interval;
@@ -256,9 +289,15 @@ function draw(){
   ctx.fillStyle = boards[boardEquipped].color;
   ctx.fillRect(0,0,canvas.width,canvas.height);
 
-  snake.forEach((s)=>{
-    ctx.fillStyle = skins[skinEquipped].color;
-    ctx.fillRect(s.x, s.y, box, box);
+  snake.forEach((s,index)=>{
+    if(skins[skinEquipped].color === "rainbow") {
+      const rainbowColors = ["#FF0000","#FF7F00","#FFFF00","#00FF00","#0000FF","#4B0082","#8B00FF"];
+      let color = rainbowColors[(index + Math.floor(Date.now()/100)) % rainbowColors.length];
+      ctx.fillStyle = color;
+    } else {
+      ctx.fillStyle = skins[skinEquipped].color;
+    }
+    ctx.fillRect(s.x,s.y,box,box);
   });
 
   ctx.fillStyle = "red";
@@ -292,6 +331,7 @@ function draw(){
   snake.unshift(head);
 }
 
+// Controles teclado
 document.addEventListener("keydown", e=>{
   if(e.key==="ArrowLeft" && dir!=="RIGHT") dir="LEFT";
   if(e.key==="ArrowRight" && dir!=="LEFT") dir="RIGHT";
@@ -299,6 +339,7 @@ document.addEventListener("keydown", e=>{
   if(e.key==="ArrowDown" && dir!=="UP") dir="DOWN";
 });
 
+// Swipe móvil
 let touchStartX=0, touchStartY=0;
 canvas.addEventListener("touchstart", e=>{
   touchStartX=e.touches[0].clientX;
@@ -319,8 +360,14 @@ canvas.addEventListener("touchmove", e=>{
   touchStartX = e.touches[0].clientX;
   touchStartY = e.touches[0].clientY;
 }, {passive:false});
+
+// ✅ Controles flechas en pantalla
+document.getElementById("arrowUp").addEventListener("click", ()=>{ if(dir!=="DOWN") dir="UP"; });
+document.getElementById("arrowDown").addEventListener("click", ()=>{ if(dir!=="UP") dir="DOWN"; });
+document.getElementById("arrowLeft").addEventListener("click", ()=>{ if(dir!=="RIGHT") dir="LEFT"; });
+document.getElementById("arrowRight").addEventListener("click", ()=>{ if(dir!=="LEFT") dir="RIGHT"; });
+
 </script>
 
 </body>
 </html>
-
