@@ -64,10 +64,10 @@ canvas {
   transform: translateX(-50%);
   z-index: 1000;
   user-select: none;
-  pointer-events: none; /* evita que interfiera fuera del juego */
+  pointer-events: none;
 }
 #mobileControls button {
-  width: 60px;  /* más grande */
+  width: 60px;
   height: 60px;
   margin: 5px;
   font-size: 28px;
@@ -79,7 +79,6 @@ canvas {
 #arrowDown { grid-area: down; }
 #arrowRight { grid-area: right; }
 
-/* Usamos grid para ordenar como teclado de PC */
 #mobileControlsGrid {
   display: grid;
   grid-template-areas:
@@ -201,7 +200,7 @@ updateUI();
 
 function hideAll(){
   menu.style.display = modes.style.display = shop.style.display = game.style.display = "none";
-  mobileControls.style.display = "none"; // ocultamos siempre fuera del juego
+  mobileControls.style.display = "none";
 }
 function backMenu(){
   hideAll();
@@ -282,7 +281,7 @@ window.addEventListener("resize", resizeCanvas);
 function startGame(){
   hideAll();
   game.style.display = "block";
-  mobileControls.style.display = "block"; // mostramos solo al entrar al juego
+  mobileControls.style.display = "block";
   resizeCanvas();
 
   snake = [{x:5*box, y:5*box}];
@@ -324,10 +323,7 @@ function draw(){
   if(dir==="UP") head.y -= box;
   if(dir==="DOWN") head.y += box;
 
-  // Bordes exactos
-  let cols = canvas.width / box;
-  let rows = canvas.height / box;
-  if(head.x < 0 || head.y < 0 || head.x >= cols*box || head.y >= rows*box ||
+  if(head.x < 0 || head.y < 0 || head.x + box > canvas.width || head.y + box > canvas.height ||
      snake.some(s=>s.x===head.x && s.y===head.y)){
     clearInterval(interval);
     alert("Perdiste 😢");
@@ -389,3 +385,4 @@ document.getElementById("arrowRight").addEventListener("click", ()=>{ if(dir!=="
 </script>
 </body>
 </html>
+
